@@ -172,6 +172,8 @@ export type NotificationPayload = {
   priority: NotificationPriority;
   tags?: string;
   level: EventLevel;
+  machineId?: string;
+  machineLabel?: string;
 };
 
 export type Config = {

@@ -95,13 +95,13 @@ describe('notifications', () => {
   });
 
   describe('webhook channel', () => {
-    it('sends JSON payload to webhook URL', async () => {
+    it('sends JSON payload to webhook URL with machine context', async () => {
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response());
       const channels: Record<string, NotificationChannelConfig> = {
         wh: { type: 'webhook', url: 'https://example.com/hook', enabled: true },
       };
 
-      await sendNotifications(channels, alertPayload(EventLevel.WARN, 'srv1', 'test alert'));
+      await sendNotifications(channels, alertPayload(EventLevel.WARN, 'srv1', 'test alert', { machineId: 'srv1', machineLabel: 'srv1' }));
 
       expect(fetchSpy).toHaveBeenCalledOnce();
       const [url, init] = fetchSpy.mock.calls[0];
@@ -109,16 +109,20 @@ describe('notifications', () => {
       const headers = (init as RequestInit).headers as Record<string, string>;
       expect(headers['Content-Type']).toBe('application/json');
       expect(headers).not.toHaveProperty('X-Snitchr-Signature');
+      expect(headers).not.toHaveProperty('X-Snitchr-Timestamp');
 
       const body = JSON.parse((init as RequestInit).body as string);
+      expect(body.id).toMatch(/^evt_[0-9a-f]{16}$/);
       expect(body.event).toBe('alert');
       expect(body.title).toBe('WARN: srv1');
       expect(body.body).toBe('test alert');
       expect(body.level).toBe(EventLevel.WARN);
+      expect(body.levelName).toBe('WARN');
+      expect(body.machine).toEqual({ id: 'srv1', label: 'srv1' });
       expect(body.timestamp).toBeDefined();
     });
 
-    it('adds HMAC signature when secret is set', async () => {
+    it('adds HMAC signature and timestamp when secret is set', async () => {
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response());
       const channels: Record<string, NotificationChannelConfig> = {
         wh: { type: 'webhook', url: 'https://example.com/hook', secret: 'mysecret', enabled: true },
@@ -128,6 +132,45 @@ describe('notifications', () => {
 
       const headers = (fetchSpy.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
       expect(headers['X-Snitchr-Signature']).toMatch(/^sha256=[0-9a-f]{64}$/);
+      expect(headers['X-Snitchr-Timestamp']).toMatch(/^\d+$/);
+    });
+
+    it('signs timestamp.body for replay protection', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response());
+      const channels: Record<string, NotificationChannelConfig> = {
+        wh: { type: 'webhook', url: 'https://example.com/hook', secret: 'testsecret', enabled: true },
+      };
+
+      await sendNotifications(channels, alertPayload(EventLevel.WARN, 'x', 'y'));
+
+      const init = fetchSpy.mock.calls[0][1] as RequestInit;
+      const headers = init.headers as Record<string, string>;
+      const ts = headers['X-Snitchr-Timestamp'];
+      const rawBody = init.body as string;
+
+      // Verify signature matches timestamp.body
+      const key = await crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode('testsecret'),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign'],
+      );
+      const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${ts}.${rawBody}`)));
+      const expected = `sha256=${Array.from(sig, b => b.toString(16).padStart(2, '0')).join('')}`;
+      expect(headers['X-Snitchr-Signature']).toBe(expected);
+    });
+
+    it('omits machine field when no machine context', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response());
+      const channels: Record<string, NotificationChannelConfig> = {
+        wh: { type: 'webhook', url: 'https://example.com/hook', enabled: true },
+      };
+
+      await sendNotifications(channels, alertPayload(EventLevel.WARN, 'srv1', 'test'));
+
+      const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+      expect(body.machine).toBeUndefined();
     });
   });
 
@@ -302,11 +345,22 @@ describe('notifications', () => {
       expect(alertPayload(EventLevel.WARN, 'x', 'y').priority).toBe('default');
     });
 
+    it('alertPayload includes machine context when provided', () => {
+      const p = alertPayload(EventLevel.WARN, 'web-1', 'test', { machineId: 'abc', machineLabel: 'web-1' });
+      expect(p.machineId).toBe('abc');
+      expect(p.machineLabel).toBe('web-1');
+    });
+
     it('recoveryPayload has correct shape', () => {
       const p = recoveryPayload('web-1');
       expect(p.event).toBe('recovery');
       expect(p.title).toBe('UP: web-1');
       expect(p.tags).toBe('white_check_mark');
+    });
+
+    it('recoveryPayload includes machine context when provided', () => {
+      const p = recoveryPayload('web-1', { machineId: 'abc', machineLabel: 'web-1' });
+      expect(p.machineId).toBe('abc');
     });
 
     it('downPayload has correct shape', () => {
@@ -315,6 +369,12 @@ describe('notifications', () => {
       expect(p.title).toBe('DOWN: db-1');
       expect(p.priority).toBe('urgent');
       expect(p.body).toContain('5m ago');
+    });
+
+    it('downPayload includes machine context when provided', () => {
+      const p = downPayload('db-1', 5, { machineId: 'db1', machineLabel: 'db-1' });
+      expect(p.machineId).toBe('db1');
+      expect(p.machineLabel).toBe('db-1');
     });
   });
 });

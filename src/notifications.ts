@@ -4,6 +4,7 @@ import {
   type NotificationChannelConfig,
   type NotificationPayload,
 } from './types';
+import { randomBytes, toHex } from './crypto';
 import type { KVStore } from './kv';
 import { sendWebPush, type VapidKeys, type PushSubscriptionRecord } from './webpush';
 
@@ -41,27 +42,34 @@ const createNtfyChannel = (endpoint: string): NotificationChannel => ({
 
 const webhookBody = (payload: NotificationPayload): string =>
   JSON.stringify({
+    id: `evt_${toHex(randomBytes(8))}`,
     event: payload.event,
+    timestamp: new Date().toISOString(),
+    machine: payload.machineId ? { id: payload.machineId, label: payload.machineLabel ?? payload.machineId } : undefined,
+    level: payload.level,
+    levelName: EVENT_LEVEL_LABEL[payload.level] ?? 'UNKNOWN',
     title: payload.title,
     body: payload.body,
     priority: payload.priority,
-    level: payload.level,
-    timestamp: new Date().toISOString(),
   });
 
-const hmacSign = async (secret: string, body: string): Promise<string> => {
+const hmacSign = async (secret: string, content: string): Promise<string> => {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, [
     'sign',
   ]);
-  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body)));
+  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(content)));
   return `sha256=${Array.from(sig, (b) => b.toString(16).padStart(2, '0')).join('')}`;
 };
 
 const createWebhookChannel = (url: string, secret?: string): NotificationChannel => ({
   send: async (payload) => {
     const body = webhookBody(payload);
+    const ts = Math.floor(Date.now() / 1000).toString();
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (secret) headers['X-Snitchr-Signature'] = await hmacSign(secret, body);
+    if (secret) {
+      headers['X-Snitchr-Signature'] = await hmacSign(secret, `${ts}.${body}`);
+      headers['X-Snitchr-Timestamp'] = ts;
+    }
     await fetch(url, { method: 'POST', signal: AbortSignal.timeout(5000), headers, body });
   },
 });
@@ -210,6 +218,8 @@ export const sendTestNotification = async (
     priority: 'default',
     tags: 'white_check_mark',
     level: EventLevel.INFO,
+    machineId: 'test',
+    machineLabel: 'Test',
   };
 
   try {
@@ -222,33 +232,41 @@ export const sendTestNotification = async (
 
 // ── Payload helpers ────────────────────────────────────────────────────
 
-export const alertPayload = (level: EventLevel, label: string, msg: string): NotificationPayload => ({
+type MachineCtx = { machineId: string; machineLabel: string };
+
+export const alertPayload = (level: EventLevel, label: string, msg: string, machine?: MachineCtx): NotificationPayload => ({
   event: 'alert',
   title: `${EVENT_LEVEL_LABEL[level] ?? 'ALERT'}: ${label}`,
   body: msg,
   priority: level >= EventLevel.ERROR ? 'high' : 'default',
   level,
+  machineId: machine?.machineId,
+  machineLabel: machine?.machineLabel,
 });
 
-export const recoveryPayload = (label: string): NotificationPayload => ({
+export const recoveryPayload = (label: string, machine?: MachineCtx): NotificationPayload => ({
   event: 'recovery',
   title: `UP: ${label}`,
   body: `Machine ${label} is back online`,
   priority: 'default',
   tags: 'white_check_mark',
   level: EventLevel.INFO,
+  machineId: machine?.machineId,
+  machineLabel: machine?.machineLabel,
 });
 
-export const downPayload = (label: string, agoMinutes: number): NotificationPayload => ({
+export const downPayload = (label: string, agoMinutes: number, machine?: MachineCtx): NotificationPayload => ({
   event: 'down',
   title: `DOWN: ${label}`,
   body: `Machine ${label} last seen ${agoMinutes}m ago`,
   priority: 'urgent',
   tags: 'red_circle',
   level: EventLevel.CRITICAL,
+  machineId: machine?.machineId,
+  machineLabel: machine?.machineLabel,
 });
 
-export const diskFillPayload = (label: string, currentPct: number, hoursLeft: number): NotificationPayload => {
+export const diskFillPayload = (label: string, currentPct: number, hoursLeft: number, machine?: MachineCtx): NotificationPayload => {
   const eta = hoursLeft < 1 ? `${Math.round(hoursLeft * 60)}m` : `${Math.round(hoursLeft)}h`;
   return {
     event: 'alert',
@@ -257,5 +275,7 @@ export const diskFillPayload = (label: string, currentPct: number, hoursLeft: nu
     priority: hoursLeft <= 6 ? 'urgent' : 'high',
     tags: 'warning',
     level: hoursLeft <= 6 ? EventLevel.CRITICAL : EventLevel.WARN,
+    machineId: machine?.machineId,
+    machineLabel: machine?.machineLabel,
   };
 };

@@ -16,6 +16,9 @@
   .channel menu.buttons {
     margin: 0;
   }
+  .channel-desc {
+    font-size: var(--text-8);
+  }
 
   /* feature rows */
   .feature-row {
@@ -74,6 +77,46 @@
     color: var(--faint-foreground);
     font-variant-numeric: tabular-nums;
   }
+
+  /* webhook docs */
+  .webhook-docs {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+  }
+  .webhook-docs summary {
+    cursor: pointer;
+    color: var(--muted-foreground);
+  }
+  .webhook-docs-body {
+    margin-top: 0.5rem;
+  }
+  .webhook-docs-body p {
+    margin: 0.6rem 0 0.4rem;
+  }
+  .webhook-docs-body p:first-child {
+    margin-top: 0;
+  }
+  .webhook-docs pre {
+    font-size: 0.7rem;
+    overflow-x: auto;
+    padding: 0.5rem;
+    background: var(--code-bg, #1e1e2e);
+    border-radius: 4px;
+  }
+
+  /* webhook secret */
+  .webhook-secret-wrap {
+    display: flex;
+    gap: 0.4rem;
+  }
+  .webhook-secret-wrap input {
+    flex: 1;
+  }
+  .webhook-secret-hint {
+    font-size: 0.7rem;
+    color: var(--faint-foreground);
+    margin-top: 0.2rem;
+  }
 </style>
 
 <main>
@@ -112,16 +155,20 @@
             <div>
               <strong>Webhook</strong>
               <span class="badge success small" data-channel-badge="webhook" hidden>Enabled</span>
-              <div class="text-lighter" style="font-size: var(--text-8)">
-                HTTP POST with JSON payload, optional HMAC-SHA256 signing
+              <div class="text-lighter channel-desc">
+                HTTP POST with JSON payload, HMAC-SHA256 signed
               </div>
             </div>
             <input type="url" id="webhook-url" placeholder="https://example.com/webhook" />
-            <div data-field>
-              <label style="font-size: var(--text-8)"
-                >Signing secret <small class="text-lighter">(optional)</small></label
-              >
-              <input type="text" id="webhook-secret" placeholder="Leave empty to skip signing" />
+            <div data-field id="webhook-secret-field">
+              <label class="channel-desc">Signing secret</label>
+              <div class="webhook-secret-wrap">
+                <input type="text" id="webhook-secret" placeholder="Auto-generated on enable" />
+                <button class="outline small" type="button" id="webhook-copy-secret" title="Copy" hidden>Copy</button>
+              </div>
+              <div class="webhook-secret-hint">
+                A secret is generated automatically when you enable the webhook. Save it &mdash; it verifies payloads.
+              </div>
             </div>
             <div class="hstack">
               <button class="outline small" type="button" data-channel-enable-btn="webhook" disabled>
@@ -132,6 +179,39 @@
                 <button class="outline small" type="button" data-channel-disable-btn="webhook">Disable</button>
               </menu>
             </div>
+            <details class="webhook-docs">
+              <summary>Payload format &amp; verification</summary>
+              <div class="webhook-docs-body">
+                <p><strong>Headers</strong></p>
+<pre><code>Content-Type: application/json
+X-Snitchr-Signature: sha256=&lt;hex&gt;
+X-Snitchr-Timestamp: &lt;unix-seconds&gt;</code></pre>
+                <p><strong>Body</strong></p>
+<pre><code>{
+  "id": "evt_a1b2c3d4e5f6a7b8",
+  "event": "alert | recovery | down | test",
+  "timestamp": "2026-04-01T12:00:00.000Z",
+  "machine": { "id": "web-1", "label": "Production Web" },
+  "level": 2,
+  "levelName": "WARN",
+  "title": "WARN: Production Web",
+  "body": "SSH login from 1.2.3.4",
+  "priority": "high"
+}</code></pre>
+                <p><strong>Verify (Node.js)</strong></p>
+<pre><code>import { createHmac, timingSafeEqual } from 'crypto';
+
+const ts = req.headers['x-snitchr-timestamp'];
+const sig = req.headers['x-snitchr-signature'];
+if (Math.abs(Date.now() / 1000 - Number(ts)) &gt; 300)
+  throw new Error('Timestamp too old');
+
+const expected = 'sha256=' + createHmac('sha256', SECRET)
+  .update(ts + '.' + rawBody).digest('hex');
+if (!timingSafeEqual(Buffer.from(sig), Buffer.from(expected)))
+  throw new Error('Invalid signature');</code></pre>
+              </div>
+            </details>
           </div>
 
           <div class="channel vstack gap-2" data-channel="slack">
@@ -452,6 +532,27 @@
     updateEnableBtns();
     Object.values(channelInput).forEach(id => $(id).addEventListener('input', updateEnableBtns));
 
+    // ── Webhook secret helpers ──
+    const generateSecret = () => {
+      const buf = new Uint8Array(32);
+      crypto.getRandomValues(buf);
+      return Array.from(buf, b => b.toString(16).padStart(2, '0')).join('');
+    };
+
+    const syncCopyBtn = () => {
+      const has = !!$('webhook-secret').value.trim();
+      $('webhook-copy-secret').hidden = !has;
+    };
+    syncCopyBtn();
+    $('webhook-secret').addEventListener('input', syncCopyBtn);
+
+    $('webhook-copy-secret').addEventListener('click', async () => {
+      const val = $('webhook-secret').value;
+      if (!val) return;
+      await navigator.clipboard.writeText(val);
+      toast('Secret copied');
+    });
+
     // ── Build notifications object from UI ──
     const buildNotifications = () => {
       const n = { ...cfg.notifications };
@@ -497,6 +598,10 @@
     document.querySelectorAll('[data-channel-enable-btn]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const name = btn.dataset.channelEnableBtn;
+        if (name === 'webhook' && !$('webhook-secret').value.trim()) {
+          $('webhook-secret').value = generateSecret();
+          syncCopyBtn();
+        }
         btn.disabled = true;
         btn.textContent = 'Testing\u2026';
         await testAndSave(name, true);

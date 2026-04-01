@@ -27,8 +27,9 @@ export const scheduled = async (_event: unknown, env: Bindings) => {
     const stale = now - status.lastSeen > timeout;
     if (stale && !machine.notifiedDownAt) {
       const label = machine.label ?? id.slice(0, 8);
+      const mctx = { machineId: id, machineLabel: label };
       const ago = Math.round((now - status.lastSeen) / 60000);
-      await sendNotifications(config.notifications, downPayload(label, ago), deps);
+      await sendNotifications(config.notifications, downPayload(label, ago, mctx), deps);
       machine.notifiedDownAt = now;
       changed = true;
     }
@@ -43,8 +44,9 @@ export const scheduled = async (_event: unknown, env: Bindings) => {
 
       if (isConcerning && !machine.diskFillNotifiedAt) {
         const label = machine.label ?? id.slice(0, 8);
+        const mctx = { machineId: id, machineLabel: label };
         const currentPct = status.d?.disk?.[0] ?? 0;
-        await sendNotifications(config.notifications, diskFillPayload(label, currentPct, prediction.hoursToThreshold!), deps);
+        await sendNotifications(config.notifications, diskFillPayload(label, currentPct, prediction.hoursToThreshold!, mctx), deps);
         machine.diskFillNotifiedAt = now;
         changed = true;
       } else if (!isConcerning && machine.diskFillNotifiedAt) {

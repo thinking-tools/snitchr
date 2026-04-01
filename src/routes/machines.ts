@@ -194,11 +194,12 @@ machines.post(
     if (t >= threshold && t !== EventLevel.SHUTDOWN && !isDup && config.notifications) {
       const label = machine.label ?? id.slice(0, 8);
       const ad = payload as AlertData;
+      const mctx = { machineId: id, machineLabel: label };
       const deps: NotifyDeps = { kv: c.env.SNITCHR_CONFIG, vapidKeys: vapidKeysFromConfig(config), contactEmail: c.env.VAPID_CONTACT };
       c.executionCtx.waitUntil(
         sendNotifications(
           config.notifications,
-          alertPayload(t as EventLevel, label, ad.msg || `Event t:${t} on ${label}`),
+          alertPayload(t as EventLevel, label, ad.msg || `Event t:${t} on ${label}`, mctx),
           deps,
         ),
       );
@@ -210,8 +211,9 @@ machines.post(
       configDirty = true;
       if (config.notifications) {
         const label = machine.label ?? id.slice(0, 8);
+        const mctx = { machineId: id, machineLabel: label };
         const deps: NotifyDeps = { kv: c.env.SNITCHR_CONFIG, vapidKeys: vapidKeysFromConfig(config), contactEmail: c.env.VAPID_CONTACT };
-        c.executionCtx.waitUntil(sendNotifications(config.notifications, recoveryPayload(label), deps));
+        c.executionCtx.waitUntil(sendNotifications(config.notifications, recoveryPayload(label, mctx), deps));
       }
     }
 
