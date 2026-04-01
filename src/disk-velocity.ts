@@ -28,7 +28,10 @@ export const diskSlope = (samples: DiskSample[]): number | null => {
   if (n < MIN_SAMPLES) return null;
 
   const t0 = samples[0][0];
-  let sumT = 0, sumV = 0, sumTV = 0, sumTT = 0;
+  let sumT = 0,
+    sumV = 0,
+    sumTV = 0,
+    sumTT = 0;
   for (const [ts, pct] of samples) {
     const t = (ts - t0) / 1000;
     sumT += t;

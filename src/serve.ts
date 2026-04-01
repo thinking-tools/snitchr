@@ -27,11 +27,11 @@ export const startServer = (opts: ServeOptions) => {
 
   const server = serve(
     {
-      fetch: (req) => app.fetch(req, bindings),
+      fetch: req => app.fetch(req, bindings),
       port,
       hostname,
     },
-    (info) => {
+    info => {
       console.log(`snitchr gateway listening on http://${info.address}:${info.port}`);
     },
   );

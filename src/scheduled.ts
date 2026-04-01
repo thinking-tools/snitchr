@@ -1,6 +1,12 @@
 import type { Bindings, MachineStatus } from './types';
 import { getConfig, storageFromConfig } from './config';
-import { hasEnabledChannels, sendNotifications, downPayload, diskFillPayload, vapidKeysFromConfig } from './notifications';
+import {
+  hasEnabledChannels,
+  sendNotifications,
+  downPayload,
+  diskFillPayload,
+  vapidKeysFromConfig,
+} from './notifications';
 import { predictDiskFill, hasMinAlertWindow, DEFAULT_DISK_THRESHOLD } from './disk-velocity';
 import { isFeatureEnabled } from './validators';
 
@@ -37,16 +43,21 @@ export const scheduled = async (_event: unknown, env: Bindings) => {
     // ── Disk velocity alert ──
     if (diskEnabled && status.diskSamples?.length && hasMinAlertWindow(status.diskSamples)) {
       const prediction = predictDiskFill(status.diskSamples, DEFAULT_DISK_THRESHOLD);
-      const isConcerning = prediction.trend === 'filling'
-        && prediction.hoursToThreshold !== null
-        && prediction.hoursToThreshold <= horizon
-        && (status.d?.disk?.[0] ?? 0) > 10;
+      const isConcerning =
+        prediction.trend === 'filling' &&
+        prediction.hoursToThreshold !== null &&
+        prediction.hoursToThreshold <= horizon &&
+        (status.d?.disk?.[0] ?? 0) > 10;
 
       if (isConcerning && !machine.diskFillNotifiedAt) {
         const label = machine.label ?? id.slice(0, 8);
         const mctx = { machineId: id, machineLabel: label };
         const currentPct = status.d?.disk?.[0] ?? 0;
-        await sendNotifications(config.notifications, diskFillPayload(label, currentPct, prediction.hoursToThreshold!, mctx), deps);
+        await sendNotifications(
+          config.notifications,
+          diskFillPayload(label, currentPct, prediction.hoursToThreshold!, mctx),
+          deps,
+        );
         machine.diskFillNotifiedAt = now;
         changed = true;
       } else if (!isConcerning && machine.diskFillNotifiedAt) {

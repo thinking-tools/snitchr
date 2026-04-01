@@ -50,7 +50,10 @@ describe('Settings API', () => {
     it('updates heartbeat timeout', async () => {
       const res = await app.request(
         '/api/settings',
-        { ...jsonPatch({ heartbeatTimeout: 300 }), headers: { ...authed(session), 'Content-Type': 'application/json' } },
+        {
+          ...jsonPatch({ heartbeatTimeout: 300 }),
+          headers: { ...authed(session), 'Content-Type': 'application/json' },
+        },
         env,
       );
       expect(res.status).toBe(200);
@@ -140,7 +143,11 @@ describe('Settings API', () => {
       const res = await app.request(
         '/api/settings/password',
         {
-          ...jsonPost({ currentPassword: TEST_PASSWORD, newPassword: 'newpassword123', confirmPassword: 'newpassword123' }),
+          ...jsonPost({
+            currentPassword: TEST_PASSWORD,
+            newPassword: 'newpassword123',
+            confirmPassword: 'newpassword123',
+          }),
           headers: { ...authed(session), 'Content-Type': 'application/json' },
         },
         env,
@@ -180,7 +187,11 @@ describe('Settings API', () => {
       const res = await app.request(
         '/api/settings/password',
         {
-          ...jsonPost({ currentPassword: TEST_PASSWORD, newPassword: 'newpassword123', confirmPassword: 'different123' }),
+          ...jsonPost({
+            currentPassword: TEST_PASSWORD,
+            newPassword: 'newpassword123',
+            confirmPassword: 'different123',
+          }),
           headers: { ...authed(session), 'Content-Type': 'application/json' },
         },
         env,
@@ -221,7 +232,10 @@ describe('Settings API', () => {
 
   describe('GET /api/version', () => {
     it('returns version info', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ version: '0.0.1' }), { status: 200 })));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(new Response(JSON.stringify({ version: '0.0.1' }), { status: 200 })),
+      );
       try {
         const res = await app.request('/api/version', { headers: authed(session) }, env);
         expect(res.status).toBe(200);

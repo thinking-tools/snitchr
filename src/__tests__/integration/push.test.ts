@@ -87,7 +87,10 @@ describe('Push notification API', () => {
       const sub1 = { endpoint: 'https://push.example.com/1', keys: { p256dh: 'a', auth: 'b' } };
       const sub2 = { endpoint: 'https://push.example.com/1', keys: { p256dh: 'c', auth: 'd' } };
 
-      const opts = (body: unknown) => ({ ...jsonPost(body), headers: { ...authed(session), 'Content-Type': 'application/json' } });
+      const opts = (body: unknown) => ({
+        ...jsonPost(body),
+        headers: { ...authed(session), 'Content-Type': 'application/json' },
+      });
       await app.request('/api/push/subscribe', opts(sub1), env);
       await app.request('/api/push/subscribe', opts(sub2), env);
 
@@ -118,7 +121,10 @@ describe('Push notification API', () => {
 
       const res = await app.request(
         '/api/push/unsubscribe',
-        { ...jsonPost({ endpoint: sub.endpoint }), headers: { ...authed(session), 'Content-Type': 'application/json' } },
+        {
+          ...jsonPost({ endpoint: sub.endpoint }),
+          headers: { ...authed(session), 'Content-Type': 'application/json' },
+        },
         env,
       );
       expect(res.status).toBe(200);
@@ -141,7 +147,10 @@ describe('Push notification API', () => {
 
       await app.request(
         '/api/push/unsubscribe',
-        { ...jsonPost({ endpoint: sub.endpoint }), headers: { ...authed(session), 'Content-Type': 'application/json' } },
+        {
+          ...jsonPost({ endpoint: sub.endpoint }),
+          headers: { ...authed(session), 'Content-Type': 'application/json' },
+        },
         env,
       );
 
@@ -150,7 +159,10 @@ describe('Push notification API', () => {
     });
 
     it('keeps webpush enabled when other subscriptions remain', async () => {
-      const opts = (body: unknown) => ({ ...jsonPost(body), headers: { ...authed(session), 'Content-Type': 'application/json' } });
+      const opts = (body: unknown) => ({
+        ...jsonPost(body),
+        headers: { ...authed(session), 'Content-Type': 'application/json' },
+      });
       const sub1 = { endpoint: 'https://push.example.com/device-a', keys: { p256dh: 'a', auth: 'b' } };
       const sub2 = { endpoint: 'https://push.example.com/device-b', keys: { p256dh: 'c', auth: 'd' } };
 

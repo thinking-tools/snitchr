@@ -66,10 +66,19 @@ export type HeartbeatData = {
 
 /** Subtypes of alert events emitted by the agent. */
 export type EventType =
-  | 'ssh_login' | 'ssh_fail' | 'sudo' | 'su' | 'auth_fail'
-  | 'new_process' | 'new_port' | 'mount_change'
-  | 'cpu_spike' | 'mem_spike' | 'disk_high'
-  | 'file_change' | 'crontab_change'
+  | 'ssh_login'
+  | 'ssh_fail'
+  | 'sudo'
+  | 'su'
+  | 'auth_fail'
+  | 'new_process'
+  | 'new_port'
+  | 'mount_change'
+  | 'cpu_spike'
+  | 'mem_spike'
+  | 'disk_high'
+  | 'file_change'
+  | 'crontab_change'
   | 'shutdown';
 
 /** Alert / event payload (t > 0). */
@@ -214,12 +223,7 @@ export type CfGeoProperties = {
 export interface R2BucketLike {
   get(key: string): Promise<{ text(): Promise<string>; json<T>(): Promise<T> } | null>;
   put(key: string, data: string | ArrayBufferView | ArrayBuffer | ReadableStream): Promise<unknown>;
-  list(opts: {
-    prefix?: string;
-    limit?: number;
-    cursor?: string;
-    delimiter?: string;
-  }): Promise<{
+  list(opts: { prefix?: string; limit?: number; cursor?: string; delimiter?: string }): Promise<{
     objects: Array<{ key: string; size: number; uploaded: Date }>;
     truncated: boolean;
     cursor: string;

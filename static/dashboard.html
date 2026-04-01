@@ -151,8 +151,12 @@
     margin: -0.05rem 0 0.15rem;
     letter-spacing: 0.02em;
   }
-  .disk-fill-hint.warning { color: var(--warning); }
-  .disk-fill-hint.critical { color: var(--danger); }
+  .disk-fill-hint.warning {
+    color: var(--warning);
+  }
+  .disk-fill-hint.critical {
+    color: var(--danger);
+  }
 
   /* empty state */
   #empty-state {
@@ -723,7 +727,8 @@
       const dp = m.diskPrediction;
       let fillHint = '';
       if (dp?.trend === 'filling' && dp.hoursToThreshold != null && dp.hoursToThreshold <= 48) {
-        const t = dp.hoursToThreshold < 1 ? Math.round(dp.hoursToThreshold * 60) + 'm' : Math.round(dp.hoursToThreshold) + 'h';
+        const t =
+          dp.hoursToThreshold < 1 ? Math.round(dp.hoursToThreshold * 60) + 'm' : Math.round(dp.hoursToThreshold) + 'h';
         fillHint = `<div class="disk-fill-hint ${dp.hoursToThreshold <= 12 ? 'critical' : 'warning'}" data-tip="Based on recent usage trend, disk is predicted to reach 90% in ~${t}">↗ ~${t} to 90%</div>`;
       }
       metrics = `<div class="metrics">

@@ -202,7 +202,13 @@ describe('createStorage', () => {
   });
 
   it('returns a Storage for s3 mode', () => {
-    const s = createStorage({ mode: 's3', endpoint: 'https://s3.example.com', accessKey: 'ak', secretKey: 'sk', region: 'us-east-1' });
+    const s = createStorage({
+      mode: 's3',
+      endpoint: 'https://s3.example.com',
+      accessKey: 'ak',
+      secretKey: 'sk',
+      region: 'us-east-1',
+    });
     expect(s.put).toBeTypeOf('function');
   });
 });
@@ -239,9 +245,7 @@ const createMockR2 = (): R2BucketLike => {
       const prefix = opts.prefix ?? '';
       const limit = opts.limit ?? 100;
       const startAfter = opts.cursor ?? '';
-      const keys = [...data.keys()]
-        .filter(k => k.startsWith(prefix) && k > startAfter)
-        .sort();
+      const keys = [...data.keys()].filter(k => k.startsWith(prefix) && k > startAfter).sort();
       const page = keys.slice(0, limit);
       return {
         objects: page.map(key => ({ key, size: data.get(key)!.length, uploaded: new Date() })),
@@ -339,7 +343,9 @@ describe('R2Storage', () => {
   it('reports test failure when R2 throws', async () => {
     const broken: R2BucketLike = {
       ...createMockR2(),
-      list: () => { throw new Error('R2 unavailable'); },
+      list: () => {
+        throw new Error('R2 unavailable');
+      },
     };
     const s = createStorage({ mode: 'r2', r2: broken });
     const result = await s.test();

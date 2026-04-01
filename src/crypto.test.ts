@@ -1,5 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { str2uint8, toHex, fromHex, cshakeHash, hashPassword, createSession, isAuthed, compactToken, normalizeToken } from './crypto';
+import {
+  str2uint8,
+  toHex,
+  fromHex,
+  cshakeHash,
+  hashPassword,
+  createSession,
+  isAuthed,
+  compactToken,
+  normalizeToken,
+} from './crypto';
 
 describe('str2uint8', () => {
   it('encodes ASCII string', () => {

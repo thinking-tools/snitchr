@@ -13,7 +13,8 @@ const getArg = (name: string, fallback: string): string => {
 const hasFlag = (name: string): boolean => args.includes(`--${name}`);
 
 if (hasFlag('help') || hasFlag('h')) {
-  console.log(`
+  console.log(
+    `
 snitchr — server monitoring gateway
 
 Usage: snitchr [options]
@@ -29,7 +30,8 @@ Examples:
   npx snitchr
   npx snitchr --port 3000 --data-dir /var/lib/snitchr
   bunx snitchr --port 8080
-`.trim());
+`.trim(),
+  );
   process.exit(0);
 }
 

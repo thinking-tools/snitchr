@@ -195,7 +195,11 @@ machines.post(
       const label = machine.label ?? id.slice(0, 8);
       const ad = payload as AlertData;
       const mctx = { machineId: id, machineLabel: label };
-      const deps: NotifyDeps = { kv: c.env.SNITCHR_CONFIG, vapidKeys: vapidKeysFromConfig(config), contactEmail: c.env.VAPID_CONTACT };
+      const deps: NotifyDeps = {
+        kv: c.env.SNITCHR_CONFIG,
+        vapidKeys: vapidKeysFromConfig(config),
+        contactEmail: c.env.VAPID_CONTACT,
+      };
       c.executionCtx.waitUntil(
         sendNotifications(
           config.notifications,
@@ -212,7 +216,11 @@ machines.post(
       if (config.notifications) {
         const label = machine.label ?? id.slice(0, 8);
         const mctx = { machineId: id, machineLabel: label };
-        const deps: NotifyDeps = { kv: c.env.SNITCHR_CONFIG, vapidKeys: vapidKeysFromConfig(config), contactEmail: c.env.VAPID_CONTACT };
+        const deps: NotifyDeps = {
+          kv: c.env.SNITCHR_CONFIG,
+          vapidKeys: vapidKeysFromConfig(config),
+          contactEmail: c.env.VAPID_CONTACT,
+        };
         c.executionCtx.waitUntil(sendNotifications(config.notifications, recoveryPayload(label, mctx), deps));
       }
     }

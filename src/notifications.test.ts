@@ -1,10 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { sendNotifications, sendTestNotification, alertPayload, recoveryPayload, downPayload, hasEnabledChannels } from './notifications';
+import {
+  sendNotifications,
+  sendTestNotification,
+  alertPayload,
+  recoveryPayload,
+  downPayload,
+  hasEnabledChannels,
+} from './notifications';
 import { EventLevel, type NotificationChannelConfig } from './types';
 import { InMemoryKV } from './kv';
 import type { WebPushResult } from './webpush';
 
-vi.mock('./webpush', async (importOriginal) => {
+vi.mock('./webpush', async importOriginal => {
   const orig = await importOriginal<typeof import('./webpush')>();
   return { ...orig, sendWebPush: vi.fn() };
 });
@@ -101,7 +108,10 @@ describe('notifications', () => {
         wh: { type: 'webhook', url: 'https://example.com/hook', enabled: true },
       };
 
-      await sendNotifications(channels, alertPayload(EventLevel.WARN, 'srv1', 'test alert', { machineId: 'srv1', machineLabel: 'srv1' }));
+      await sendNotifications(
+        channels,
+        alertPayload(EventLevel.WARN, 'srv1', 'test alert', { machineId: 'srv1', machineLabel: 'srv1' }),
+      );
 
       expect(fetchSpy).toHaveBeenCalledOnce();
       const [url, init] = fetchSpy.mock.calls[0];
@@ -346,9 +356,7 @@ describe('notifications', () => {
       const subs = [makeSub('a'), makeSub('b')];
       await kv.put(SUBS_KEY, JSON.stringify(subs));
 
-      mockSendWebPush.mockImplementation((sub: { endpoint: string }) =>
-        Promise.resolve(okResult(sub.endpoint)),
-      );
+      mockSendWebPush.mockImplementation((sub: { endpoint: string }) => Promise.resolve(okResult(sub.endpoint)));
 
       await sendNotifications(webpushChannels, alertPayload(EventLevel.WARN, 'srv', 'test'), makeDeps(kv));
 

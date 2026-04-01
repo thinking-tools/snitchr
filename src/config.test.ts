@@ -71,7 +71,11 @@ describe('getConfig', () => {
     await kv.put('config', JSON.stringify(config));
     const result = await getConfig(kv);
     expect(result!.notifications).toBeDefined();
-    expect(result!.notifications!.ntfy).toMatchObject({ type: 'ntfy', endpoint: 'https://ntfy.sh/test', enabled: true });
+    expect(result!.notifications!.ntfy).toMatchObject({
+      type: 'ntfy',
+      endpoint: 'https://ntfy.sh/test',
+      enabled: true,
+    });
     expect(result!.ntfyEndpoint).toBeUndefined();
   });
 });
@@ -125,7 +129,12 @@ describe('storageFromConfig', () => {
   });
 
   it('returns Storage for r2 mode with bucket', () => {
-    const mockR2 = { get: async () => null, put: async () => {}, delete: async () => {}, list: async () => ({ objects: [], truncated: false, cursor: '' }) };
+    const mockR2 = {
+      get: async () => null,
+      put: async () => {},
+      delete: async () => {},
+      list: async () => ({ objects: [], truncated: false, cursor: '' }),
+    };
     const config = { ...baseConfig(), storageMode: 'r2' as const };
     const storage = storageFromConfig(config, mockR2);
     expect(storage).not.toBeNull();

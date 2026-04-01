@@ -120,74 +120,72 @@
 </style>
 
 <main>
-    <div id="loading">Loading&hellip;</div>
+  <div id="loading">Loading&hellip;</div>
 
-    <div id="app" class="detail-wrap" hidden>
-      <div class="detail-header">
-        <h1>Settings</h1>
-        <div class="detail-meta">Configure monitoring, notifications, and security</div>
-      </div>
+  <div id="app" class="detail-wrap" hidden>
+    <div class="detail-header">
+      <h1>Settings</h1>
+      <div class="detail-meta">Configure monitoring, notifications, and security</div>
+    </div>
 
-      <!-- ── Notifications ── -->
-      <section>
-        <div class="section-head"><h2>Notifications</h2></div>
-        <div class="card" style="padding: 0.5rem 1rem" id="channels-card">
-          <div class="channel vstack gap-2" data-channel="ntfy">
-            <div>
-              <strong>ntfy</strong> <span class="badge success small" data-channel-badge="ntfy" hidden>Enabled</span>
-              <div class="text-lighter" style="font-size: var(--text-8)">
-                Push notifications via <a href="https://ntfy.sh" target="_blank" rel="noopener">ntfy.sh</a>
-              </div>
-            </div>
-            <input type="url" id="ntfy-endpoint" placeholder="https://ntfy.sh/your-topic" />
-            <div class="hstack">
-              <button class="outline small" type="button" data-channel-enable-btn="ntfy" disabled>
-                Test &amp; Enable
-              </button>
-              <menu class="buttons" data-channel-active="ntfy" hidden>
-                <button class="outline small" type="button" data-channel-test-btn="ntfy">Test</button>
-                <button class="outline small" type="button" data-channel-disable-btn="ntfy">Disable</button>
-              </menu>
+    <!-- ── Notifications ── -->
+    <section>
+      <div class="section-head"><h2>Notifications</h2></div>
+      <div class="card" style="padding: 0.5rem 1rem" id="channels-card">
+        <div class="channel vstack gap-2" data-channel="ntfy">
+          <div>
+            <strong>ntfy</strong> <span class="badge success small" data-channel-badge="ntfy" hidden>Enabled</span>
+            <div class="text-lighter" style="font-size: var(--text-8)">
+              Push notifications via <a href="https://ntfy.sh" target="_blank" rel="noopener">ntfy.sh</a>
             </div>
           </div>
+          <input type="url" id="ntfy-endpoint" placeholder="https://ntfy.sh/your-topic" />
+          <div class="hstack">
+            <button class="outline small" type="button" data-channel-enable-btn="ntfy" disabled>
+              Test &amp; Enable
+            </button>
+            <menu class="buttons" data-channel-active="ntfy" hidden>
+              <button class="outline small" type="button" data-channel-test-btn="ntfy">Test</button>
+              <button class="outline small" type="button" data-channel-disable-btn="ntfy">Disable</button>
+            </menu>
+          </div>
+        </div>
 
-          <div class="channel vstack gap-2" data-channel="webhook">
-            <div>
-              <strong>Webhook</strong>
-              <span class="badge success small" data-channel-badge="webhook" hidden>Enabled</span>
-              <div class="text-lighter channel-desc">
-                HTTP POST with JSON payload, HMAC-SHA256 signed
-              </div>
+        <div class="channel vstack gap-2" data-channel="webhook">
+          <div>
+            <strong>Webhook</strong>
+            <span class="badge success small" data-channel-badge="webhook" hidden>Enabled</span>
+            <div class="text-lighter channel-desc">HTTP POST with JSON payload, HMAC-SHA256 signed</div>
+          </div>
+          <input type="url" id="webhook-url" placeholder="https://example.com/webhook" />
+          <div data-field id="webhook-secret-field">
+            <label class="channel-desc">Signing secret</label>
+            <div class="webhook-secret-wrap">
+              <input type="text" id="webhook-secret" placeholder="Auto-generated on enable" />
+              <button class="outline small" type="button" id="webhook-copy-secret" title="Copy" hidden>Copy</button>
             </div>
-            <input type="url" id="webhook-url" placeholder="https://example.com/webhook" />
-            <div data-field id="webhook-secret-field">
-              <label class="channel-desc">Signing secret</label>
-              <div class="webhook-secret-wrap">
-                <input type="text" id="webhook-secret" placeholder="Auto-generated on enable" />
-                <button class="outline small" type="button" id="webhook-copy-secret" title="Copy" hidden>Copy</button>
-              </div>
-              <div class="webhook-secret-hint">
-                A secret is generated automatically when you enable the webhook. Save it &mdash; it verifies payloads.
-              </div>
+            <div class="webhook-secret-hint">
+              A secret is generated automatically when you enable the webhook. Save it &mdash; it verifies payloads.
             </div>
-            <div class="hstack">
-              <button class="outline small" type="button" data-channel-enable-btn="webhook" disabled>
-                Test &amp; Enable
-              </button>
-              <menu class="buttons" data-channel-active="webhook" hidden>
-                <button class="outline small" type="button" data-channel-test-btn="webhook">Test</button>
-                <button class="outline small" type="button" data-channel-disable-btn="webhook">Disable</button>
-              </menu>
-            </div>
-            <details class="webhook-docs">
-              <summary>Payload format &amp; verification</summary>
-              <div class="webhook-docs-body">
-                <p><strong>Headers</strong></p>
-<pre><code>Content-Type: application/json
+          </div>
+          <div class="hstack">
+            <button class="outline small" type="button" data-channel-enable-btn="webhook" disabled>
+              Test &amp; Enable
+            </button>
+            <menu class="buttons" data-channel-active="webhook" hidden>
+              <button class="outline small" type="button" data-channel-test-btn="webhook">Test</button>
+              <button class="outline small" type="button" data-channel-disable-btn="webhook">Disable</button>
+            </menu>
+          </div>
+          <details class="webhook-docs">
+            <summary>Payload format &amp; verification</summary>
+            <div class="webhook-docs-body">
+              <p><strong>Headers</strong></p>
+              <pre><code>Content-Type: application/json
 X-Snitchr-Signature: sha256=&lt;hex&gt;
 X-Snitchr-Timestamp: &lt;unix-seconds&gt;</code></pre>
-                <p><strong>Body</strong></p>
-<pre><code>{
+              <p><strong>Body</strong></p>
+              <pre><code>{
   "id": "evt_a1b2c3d4e5f6a7b8",
   "event": "alert | recovery | down | test",
   "timestamp": "2026-04-01T12:00:00.000Z",
@@ -198,8 +196,8 @@ X-Snitchr-Timestamp: &lt;unix-seconds&gt;</code></pre>
   "body": "SSH login from 1.2.3.4",
   "priority": "high"
 }</code></pre>
-                <p><strong>Verify (Node.js)</strong></p>
-<pre><code>import { createHmac, timingSafeEqual } from 'crypto';
+              <p><strong>Verify (Node.js)</strong></p>
+              <pre><code>import { createHmac, timingSafeEqual } from 'crypto';
 
 const ts = req.headers['x-snitchr-timestamp'];
 const sig = req.headers['x-snitchr-signature'];
@@ -210,204 +208,204 @@ const expected = 'sha256=' + createHmac('sha256', SECRET)
   .update(ts + '.' + rawBody).digest('hex');
 if (!timingSafeEqual(Buffer.from(sig), Buffer.from(expected)))
   throw new Error('Invalid signature');</code></pre>
-              </div>
-            </details>
-          </div>
+            </div>
+          </details>
+        </div>
 
-          <div class="channel vstack gap-2" data-channel="slack">
+        <div class="channel vstack gap-2" data-channel="slack">
+          <div>
+            <strong>Slack</strong> <span class="badge success small" data-channel-badge="slack" hidden>Enabled</span>
+            <div class="text-lighter" style="font-size: var(--text-8)">
+              Incoming webhook from
+              <a href="https://api.slack.com/messaging/webhooks" target="_blank" rel="noopener">Slack</a>, color-coded
+              by severity
+            </div>
+          </div>
+          <input type="url" id="slack-webhook" placeholder="https://hooks.slack.com/services/..." />
+          <div class="hstack">
+            <button class="outline small" type="button" data-channel-enable-btn="slack" disabled>
+              Test &amp; Enable
+            </button>
+            <menu class="buttons" data-channel-active="slack" hidden>
+              <button class="outline small" type="button" data-channel-test-btn="slack">Test</button>
+              <button class="outline small" type="button" data-channel-disable-btn="slack">Disable</button>
+            </menu>
+          </div>
+        </div>
+
+        <div class="channel" data-channel="webpush">
+          <div class="hstack justify-between" style="padding: 0.2rem 0">
             <div>
-              <strong>Slack</strong> <span class="badge success small" data-channel-badge="slack" hidden>Enabled</span>
+              <strong>Browser notifications</strong>
+              <span class="badge success small" data-channel-badge="webpush" hidden>Enabled</span>
               <div class="text-lighter" style="font-size: var(--text-8)">
-                Incoming webhook from
-                <a href="https://api.slack.com/messaging/webhooks" target="_blank" rel="noopener">Slack</a>, color-coded
-                by severity
+                OS-level push via Web Push API, works when browser is closed
               </div>
             </div>
-            <input type="url" id="slack-webhook" placeholder="https://hooks.slack.com/services/..." />
-            <div class="hstack">
-              <button class="outline small" type="button" data-channel-enable-btn="slack" disabled>
-                Test &amp; Enable
-              </button>
-              <menu class="buttons" data-channel-active="slack" hidden>
-                <button class="outline small" type="button" data-channel-test-btn="slack">Test</button>
-                <button class="outline small" type="button" data-channel-disable-btn="slack">Disable</button>
-              </menu>
-            </div>
+            <label><input type="checkbox" role="switch" data-channel-enable="webpush" /></label>
           </div>
-
-          <div class="channel" data-channel="webpush">
-            <div class="hstack justify-between" style="padding: 0.2rem 0">
-              <div>
-                <strong>Browser notifications</strong>
-                <span class="badge success small" data-channel-badge="webpush" hidden>Enabled</span>
-                <div class="text-lighter" style="font-size: var(--text-8)">
-                  OS-level push via Web Push API, works when browser is closed
-                </div>
-              </div>
-              <label><input type="checkbox" role="switch" data-channel-enable="webpush" /></label>
-            </div>
-            <div class="collapsible" data-channel-body="webpush">
-              <div id="push-status" class="text-lighter" style="font-size: var(--text-8); margin: 0.5rem 0"></div>
-              <button
-                class="outline small"
-                type="button"
-                data-channel-test-btn="webpush"
-                style="display: none"
-                id="push-test-btn"
-              >
-                Test
-              </button>
-            </div>
+          <div class="collapsible" data-channel-body="webpush">
+            <div id="push-status" class="text-lighter" style="font-size: var(--text-8); margin: 0.5rem 0"></div>
+            <button
+              class="outline small"
+              type="button"
+              data-channel-test-btn="webpush"
+              style="display: none"
+              id="push-test-btn"
+            >
+              Test
+            </button>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- ── Monitoring ── -->
-      <section>
-        <div class="section-head">
-          <h2>Monitoring</h2>
+    <!-- ── Monitoring ── -->
+    <section>
+      <div class="section-head">
+        <h2>Monitoring</h2>
+      </div>
+      <div class="card" style="padding: 0.85rem 1rem">
+        <div class="setting-row">
+          <label for="alert-threshold">Threshold</label>
+          <select id="alert-threshold">
+            <option value="1">INFO &mdash; all events</option>
+            <option value="2">WARN &mdash; warnings and above</option>
+            <option value="3">ERROR &mdash; errors and critical only</option>
+            <option value="4">CRITICAL &mdash; critical events only</option>
+          </select>
         </div>
-        <div class="card" style="padding: 0.85rem 1rem">
-          <div class="setting-row">
-            <label for="alert-threshold">Threshold</label>
-            <select id="alert-threshold">
-              <option value="1">INFO &mdash; all events</option>
-              <option value="2">WARN &mdash; warnings and above</option>
-              <option value="3">ERROR &mdash; errors and critical only</option>
-              <option value="4">CRITICAL &mdash; critical events only</option>
-            </select>
+        <div class="setting-row">
+          <label for="hb-timeout">Timeout</label>
+          <input type="number" id="hb-timeout" min="30" max="3600" step="10" />
+          <span class="timeout-human" id="hb-human"></span>
+        </div>
+      </div>
+      <div class="save-row">
+        <button class="small" id="save-btn">Save changes</button>
+      </div>
+    </section>
+
+    <!-- ── Agent Features ── -->
+    <section>
+      <div class="section-head"><h2>Agent Features</h2></div>
+      <div class="card" style="padding: 0.5rem 1rem" id="features-card">
+        <div class="feature-row">
+          <div>
+            <div class="feature-name"><span class="badge danger small">ERROR</span> File integrity</div>
+            <div class="feature-desc">/etc/passwd, sshd_config, crontabs, authorized_keys</div>
           </div>
-          <div class="setting-row">
-            <label for="hb-timeout">Timeout</label>
-            <input type="number" id="hb-timeout" min="30" max="3600" step="10" />
-            <span class="timeout-human" id="hb-human"></span>
+          <label><input type="checkbox" role="switch" data-feature="fileIntegrity" /></label>
+        </div>
+        <div class="feature-row">
+          <div>
+            <div class="feature-name"><span class="badge warning small">WARN</span> Auth monitoring</div>
+            <div class="feature-desc">SSH logins, sudo events, authentication failures</div>
           </div>
+          <label><input type="checkbox" role="switch" data-feature="authWatch" /></label>
+        </div>
+        <div class="feature-row">
+          <div>
+            <div class="feature-name"><span class="badge warning small">WARN</span> Process detection</div>
+            <div class="feature-desc">New processes appearing vs captured baseline</div>
+          </div>
+          <label><input type="checkbox" role="switch" data-feature="processWatch" /></label>
+        </div>
+        <div class="feature-row">
+          <div>
+            <div class="feature-name"><span class="badge warning small">WARN</span> Port detection</div>
+            <div class="feature-desc">New listening ports appearing vs captured baseline</div>
+          </div>
+          <label><input type="checkbox" role="switch" data-feature="portWatch" /></label>
+        </div>
+        <div class="feature-row">
+          <div>
+            <div class="feature-name"><span class="badge warning small">WARN</span> Mount detection</div>
+            <div class="feature-desc">New filesystems mounted or existing ones removed vs baseline</div>
+          </div>
+          <label><input type="checkbox" role="switch" data-feature="mountWatch" /></label>
+        </div>
+        <div class="feature-row">
+          <div>
+            <div class="feature-name"><span class="badge warning small">WARN</span> CPU spike alerts</div>
+            <div class="feature-desc">Alert when CPU usage exceeds 90%</div>
+          </div>
+          <label><input type="checkbox" role="switch" data-feature="cpuAlerts" /></label>
+        </div>
+        <div class="feature-row">
+          <div>
+            <div class="feature-name"><span class="badge warning small">WARN</span> Memory spike alerts</div>
+            <div class="feature-desc">Alert when memory usage exceeds 90%</div>
+          </div>
+          <label><input type="checkbox" role="switch" data-feature="memAlerts" /></label>
+        </div>
+        <div class="feature-row">
+          <div>
+            <div class="feature-name"><span class="badge warning small">WARN</span> Disk space alerts</div>
+            <div class="feature-desc">Alert when disk usage exceeds 90%</div>
+          </div>
+          <label><input type="checkbox" role="switch" data-feature="diskAlerts" /></label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Security ── -->
+    <section>
+      <div class="section-head"><h2>Security</h2></div>
+      <div class="card" style="padding: 1rem">
+        <div class="pw-fields">
+          <label
+            >Current password
+            <input type="password" id="cur-pw" autocomplete="current-password" />
+          </label>
+          <label
+            >New password
+            <input
+              type="password"
+              id="new-pw"
+              minlength="8"
+              autocomplete="new-password"
+              placeholder="Min 8 characters"
+            />
+          </label>
+          <label
+            >Confirm new password
+            <input type="password" id="cfm-pw" autocomplete="new-password" />
+          </label>
         </div>
         <div class="save-row">
-          <button class="small" id="save-btn">Save changes</button>
+          <button class="outline small" type="button" id="pw-btn">Change password</button>
         </div>
-      </section>
-
-      <!-- ── Agent Features ── -->
-      <section>
-        <div class="section-head"><h2>Agent Features</h2></div>
-        <div class="card" style="padding: 0.5rem 1rem" id="features-card">
-          <div class="feature-row">
-            <div>
-              <div class="feature-name"><span class="badge danger small">ERROR</span> File integrity</div>
-              <div class="feature-desc">/etc/passwd, sshd_config, crontabs, authorized_keys</div>
-            </div>
-            <label><input type="checkbox" role="switch" data-feature="fileIntegrity" /></label>
-          </div>
-          <div class="feature-row">
-            <div>
-              <div class="feature-name"><span class="badge warning small">WARN</span> Auth monitoring</div>
-              <div class="feature-desc">SSH logins, sudo events, authentication failures</div>
-            </div>
-            <label><input type="checkbox" role="switch" data-feature="authWatch" /></label>
-          </div>
-          <div class="feature-row">
-            <div>
-              <div class="feature-name"><span class="badge warning small">WARN</span> Process detection</div>
-              <div class="feature-desc">New processes appearing vs captured baseline</div>
-            </div>
-            <label><input type="checkbox" role="switch" data-feature="processWatch" /></label>
-          </div>
-          <div class="feature-row">
-            <div>
-              <div class="feature-name"><span class="badge warning small">WARN</span> Port detection</div>
-              <div class="feature-desc">New listening ports appearing vs captured baseline</div>
-            </div>
-            <label><input type="checkbox" role="switch" data-feature="portWatch" /></label>
-          </div>
-          <div class="feature-row">
-            <div>
-              <div class="feature-name"><span class="badge warning small">WARN</span> Mount detection</div>
-              <div class="feature-desc">New filesystems mounted or existing ones removed vs baseline</div>
-            </div>
-            <label><input type="checkbox" role="switch" data-feature="mountWatch" /></label>
-          </div>
-          <div class="feature-row">
-            <div>
-              <div class="feature-name"><span class="badge warning small">WARN</span> CPU spike alerts</div>
-              <div class="feature-desc">Alert when CPU usage exceeds 90%</div>
-            </div>
-            <label><input type="checkbox" role="switch" data-feature="cpuAlerts" /></label>
-          </div>
-          <div class="feature-row">
-            <div>
-              <div class="feature-name"><span class="badge warning small">WARN</span> Memory spike alerts</div>
-              <div class="feature-desc">Alert when memory usage exceeds 90%</div>
-            </div>
-            <label><input type="checkbox" role="switch" data-feature="memAlerts" /></label>
-          </div>
-          <div class="feature-row">
-            <div>
-              <div class="feature-name"><span class="badge warning small">WARN</span> Disk space alerts</div>
-              <div class="feature-desc">Alert when disk usage exceeds 90%</div>
-            </div>
-            <label><input type="checkbox" role="switch" data-feature="diskAlerts" /></label>
-          </div>
-        </div>
-      </section>
-
-      <!-- ── Security ── -->
-      <section>
-        <div class="section-head"><h2>Security</h2></div>
-        <div class="card" style="padding: 1rem">
-          <div class="pw-fields">
-            <label
-              >Current password
-              <input type="password" id="cur-pw" autocomplete="current-password" />
-            </label>
-            <label
-              >New password
-              <input
-                type="password"
-                id="new-pw"
-                minlength="8"
-                autocomplete="new-password"
-                placeholder="Min 8 characters"
-              />
-            </label>
-            <label
-              >Confirm new password
-              <input type="password" id="cfm-pw" autocomplete="new-password" />
-            </label>
-          </div>
-          <div class="save-row">
-            <button class="outline small" type="button" id="pw-btn">Change password</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- ── System ── -->
-      <section>
-        <div class="section-head"><h2>System</h2></div>
-        <div class="card" style="padding: 0.65rem 1rem">
-          <div class="info-row">
-            <span class="info-label">Storage</span>
-            <span class="badge secondary small" id="s-storage"></span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Machines</span>
-            <span id="s-machines"></span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Version</span>
-            <span>v0.1.0</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- ── Danger zone ── -->
-      <div class="danger-zone">
-        <h3>Danger zone</h3>
-        <p>Permanently delete all machines, events, and configuration. This cannot be undone.</p>
-        <button data-variant="danger" class="small" type="button" id="reset-btn">Factory reset</button>
       </div>
+    </section>
+
+    <!-- ── System ── -->
+    <section>
+      <div class="section-head"><h2>System</h2></div>
+      <div class="card" style="padding: 0.65rem 1rem">
+        <div class="info-row">
+          <span class="info-label">Storage</span>
+          <span class="badge secondary small" id="s-storage"></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Machines</span>
+          <span id="s-machines"></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Version</span>
+          <span>v0.1.0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Danger zone ── -->
+    <div class="danger-zone">
+      <h3>Danger zone</h3>
+      <p>Permanently delete all machines, events, and configuration. This cannot be undone.</p>
+      <button data-variant="danger" class="small" type="button" id="reset-btn">Factory reset</button>
     </div>
-  </main>
+  </div>
+</main>
 
 <dialog id="reset-dialog">
   <header><h3>Factory reset</h3></header>
@@ -845,5 +843,4 @@ if (!timingSafeEqual(Buffer.from(sig), Buffer.from(expected)))
       btn.textContent = 'Reset everything';
     });
   })();
-
 </script>

@@ -125,9 +125,7 @@ describe('Machine registration', () => {
       );
       const { token } = await json(tokenRes);
 
-      const { id } = await json(
-        await app.request('/register', jsonPost({ token, sysinfo: {} }), env),
-      );
+      const { id } = await json(await app.request('/register', jsonPost({ token, sysinfo: {} }), env));
 
       const config = await getStoredConfig(kv);
       expect(config.machineList[id]).toBeDefined();

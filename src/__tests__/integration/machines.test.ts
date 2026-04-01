@@ -1,8 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { app } from '../../app';
 import {
-  createTestEnv, setupConfig, getSessionCookie, addMachine,
-  getStoredConfig, validHeartbeatPayload, validAlertPayload, jsonPatch, json,
+  createTestEnv,
+  setupConfig,
+  getSessionCookie,
+  addMachine,
+  getStoredConfig,
+  validHeartbeatPayload,
+  validAlertPayload,
+  jsonPatch,
+  json,
 } from '../helpers';
 import type { Bindings } from '../../types';
 import { InMemoryKV } from '../../kv';
@@ -13,11 +20,15 @@ const MACHINE_SECRET = 'a'.repeat(48);
 const authed = (session: string) => ({ Cookie: `session=${session}` });
 
 const ingest = (env: Bindings, payload: unknown) =>
-  app.request(`/m/${MACHINE_ID}/ingest`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${MACHINE_SECRET}` },
-    body: JSON.stringify(payload),
-  }, env);
+  app.request(
+    `/m/${MACHINE_ID}/ingest`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${MACHINE_SECRET}` },
+      body: JSON.stringify(payload),
+    },
+    env,
+  );
 
 describe('Machines API', () => {
   let env: Bindings;
@@ -101,7 +112,10 @@ describe('Machines API', () => {
     it('rejects label too long', async () => {
       const res = await app.request(
         `/api/machines/${MACHINE_ID}`,
-        { ...jsonPatch({ label: 'x'.repeat(101) }), headers: { ...authed(session), 'Content-Type': 'application/json' } },
+        {
+          ...jsonPatch({ label: 'x'.repeat(101) }),
+          headers: { ...authed(session), 'Content-Type': 'application/json' },
+        },
         env,
       );
       expect(res.status).toBe(400);
@@ -110,11 +124,7 @@ describe('Machines API', () => {
 
   describe('DELETE /api/machines/:id', () => {
     it('removes machine from config', async () => {
-      const res = await app.request(
-        `/api/machines/${MACHINE_ID}`,
-        { method: 'DELETE', headers: authed(session) },
-        env,
-      );
+      const res = await app.request(`/api/machines/${MACHINE_ID}`, { method: 'DELETE', headers: authed(session) }, env);
       expect(res.status).toBe(200);
 
       const config = await getStoredConfig(kv);

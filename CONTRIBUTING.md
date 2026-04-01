@@ -1,5 +1,11 @@
 # Contributing to snitchr
 
+## Before you start
+
+1. **Got an idea or hypothesis?** Open a [Discussion](https://github.com/thinking-tools/snitchr/discussions) first. This is the place to explore ideas, ask questions, and get feedback before committing to implementation work.
+2. **Ready to report a bug or propose a concrete change?** Open an [Issue](https://github.com/thinking-tools/snitchr/issues). If the issue is labeled **WIP**, it's already being worked on — don't pick it up. If it's open and unassigned, comment and ask to be assigned before starting work.
+3. **Want to submit code?** Make sure there's an issue for it and you're assigned. Then fork, branch off `dev`, and open a PR **targeting `dev`**. Your branch must be up to date with `dev` before merging.
+
 ## Development setup
 
 ```bash
@@ -220,13 +226,92 @@ dev/
   sandbox.sh             # Interactive Debian sandbox
 ```
 
-## Code style
+## Code standards
+
+### Formatting
+
+All code must be formatted with Prettier. The config lives in `package.json`.
+
+```bash
+npm run format          # auto-format all source files
+npm run format:check    # check without writing (runs in CI)
+```
+
+CI will reject unformatted code. Run `npm run format` before committing.
+
+### Style
 
 - TypeScript strict mode, ES2022 target
-- Prettier config in `package.json`: single quotes, trailing commas, 120 print width
-- No linter — trust TypeScript + tests
-- Prefer functional patterns, early returns, `const` + arrow functions
+- `const`, arrow functions, early returns, functional patterns
+- No `any` — use `unknown` with type guards
+- No comments unless the logic is genuinely non-obvious
 - No frontend framework — vanilla JS, semantic HTML, [oat-glassed](https://cdn.jsdelivr.net/npm/oat-glassed/) CSS
+
+### Functions
+
+Keep functions small — **mental complexity must stay under 10 operations**. Count each of these as one: conditional, loop, assignment, function call, return, throw, ternary, nullish coalescing, logical operator, `await`. If a function exceeds 10, decompose it.
+
+- Do one thing per function, one level of abstraction
+- 3 parameters max — use an options object beyond that
+- No flag arguments — split into separate functions
+- No hidden side effects — name functions to signal mutation (e.g., `writeConfigToDisk`, not `updateConfig`)
+
+### Naming
+
+- Descriptive, unambiguous, pronounceable, searchable
+- Concise in small scopes, descriptive in large ones
+- Booleans read as predicates: `isValid`, `hasPermission`, `canRetry`
+- Replace magic numbers/strings with named constants
+- No type prefixes (`strName`, `IUser`)
+
+### Error handling
+
+- Never silently swallow errors or leave undefined behavior
+- Consider failure modes, edge cases, and race conditions
+- Prefer explicit error types over generic catches
+- Use early returns for guard clauses
+
+### Architecture
+
+- Zero frontend frameworks — vanilla JS, Web Components only
+- Minimal dependencies — justify every `npm install`
+- Performance-first: runtime speed, memory efficiency, minimal bundle size
+- Functional TypeScript patterns over class-based OOP
+- Hide internal structure behind narrow interfaces (Law of Demeter)
+
+### Testing
+
+- Branch coverage must stay **above 80%** — check with `npm run test:coverage`
+- Write failure cases first (red light), then success cases (green light)
+- Prefer integration tests over unit tests for IO-heavy code
+- One assertion per test (or one logical concept)
+- Test names describe the scenario and expected outcome, not the implementation
+- Test edge cases: empty inputs, max sizes, concurrent access, network failures
+
+### Code smells to reject
+
+- Rigidity (small change → cascade of changes)
+- Fragility (change here → breaks over there)
+- Needless complexity (YAGNI)
+- Needless repetition (DRY, but don't over-abstract)
+- Opacity (if it needs a comment to explain, rewrite it)
+
+## Workflows
+
+### Before implementing a feature
+
+1. Investigate current state — read relevant code, don't assume
+2. Read and comprehend necessary documentation
+3. Propose a plan with tradeoffs before writing code
+4. Implement incrementally, validate at each step
+5. Run tests, check coverage, then commit
+
+### When debugging
+
+1. Reproduce first
+2. Form a hypothesis before changing code
+3. Verify the fix addresses root cause, not symptoms
+4. Check for related issues nearby
 
 ## Commit messages
 

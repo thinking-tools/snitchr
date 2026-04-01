@@ -11,40 +11,47 @@
   }
 </style>
 
-<div style="width:100%;max-width:440px;padding:1rem">
+<div style="width: 100%; max-width: 440px; padding: 1rem">
   <article class="card">
     <h2>Welcome!</h2>
     <p>Set up your password and storage to get started.</p>
     <div role="alert" data-variant="danger" id="error" hidden></div>
     <form id="form" class="vstack">
-      <label>Password
+      <label
+        >Password
         <input type="password" name="password" required minlength="8" placeholder="Min 8 characters" />
       </label>
-      <label>Confirm Password
+      <label
+        >Confirm Password
         <input type="password" name="passwordConfirm" required placeholder="Re-enter password" />
       </label>
       <input type="hidden" name="storageMode" id="storageModeInput" value="s3" />
       <div id="storage-mode" hidden>
-        <div class="flex items-center gap-4" style="flex-wrap:wrap">
+        <div class="flex items-center gap-4" style="flex-wrap: wrap">
           <label id="opt-fs" hidden><input type="radio" name="_mode" value="filesystem" /> Local filesystem</label>
           <label id="opt-r2" hidden><input type="radio" name="_mode" value="r2" /> Cloudflare R2</label>
           <label><input type="radio" name="_mode" value="s3" /> Custom S3</label>
         </div>
       </div>
       <div id="s3-fields" class="vstack">
-        <label>S3 Endpoint
+        <label
+          >S3 Endpoint
           <input type="url" name="s3Endpoint" required placeholder="https://s3.amazonaws.com" />
         </label>
-        <label>Bucket
+        <label
+          >Bucket
           <input type="text" name="s3Bucket" required placeholder="my-bucket" />
         </label>
-        <label>Region
+        <label
+          >Region
           <input type="text" name="s3Region" required placeholder="us-east-1" />
         </label>
-        <label>Access Key
+        <label
+          >Access Key
           <input type="text" name="s3AccessKey" required placeholder="AKIA..." />
         </label>
-        <label>Secret Key
+        <label
+          >Secret Key
           <input type="password" name="s3SecretKey" required placeholder="Secret access key" />
         </label>
       </div>

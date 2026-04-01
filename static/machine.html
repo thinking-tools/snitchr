@@ -1,6 +1,8 @@
 <style>
   /* detail layout override — wider than default */
-  .detail-wrap { max-width: 1100px; }
+  .detail-wrap {
+    max-width: 1100px;
+  }
 
   /* header */
   .detail-title {
@@ -25,9 +27,16 @@
     padding: 0.1rem 0.25rem;
     transition: opacity 0.15s;
   }
-  .edit-btn:hover { opacity: 0.8; }
-  .status-dot { width: 10px; height: 10px; }
-  .detail-meta { margin-top: 0.35rem; }
+  .edit-btn:hover {
+    opacity: 0.8;
+  }
+  .status-dot {
+    width: 10px;
+    height: 10px;
+  }
+  .detail-meta {
+    margin-top: 0.35rem;
+  }
 
   /* stat cards */
   .stat-grid {
@@ -36,7 +45,9 @@
     gap: 0.75rem;
     margin-bottom: 1.25rem;
   }
-  .stat-card { padding: 0.75rem 1rem; }
+  .stat-card {
+    padding: 0.75rem 1rem;
+  }
   .stat-label {
     font-size: 0.65rem;
     text-transform: uppercase;
@@ -50,15 +61,23 @@
     font-variant-numeric: tabular-nums;
     line-height: 1.2;
   }
-  .stat-card progress { width: 100%; height: 6px; margin-top: 0.35rem; }
+  .stat-card progress {
+    width: 100%;
+    height: 6px;
+    margin-top: 0.35rem;
+  }
   .stat-sub {
     font-size: 0.7rem;
     color: var(--muted-foreground);
     margin-top: 0.15rem;
     font-variant-numeric: tabular-nums;
   }
-  .stat-sub.disk-filling { color: var(--warning); }
-  .stat-sub.disk-critical { color: var(--danger); }
+  .stat-sub.disk-filling {
+    color: var(--warning);
+  }
+  .stat-sub.disk-critical {
+    color: var(--danger);
+  }
 
   /* snapshot tables */
   .snap-grid {
@@ -67,8 +86,14 @@
     gap: 0.75rem;
     margin-bottom: 1.25rem;
   }
-  @media (max-width: 800px) { .snap-grid { grid-template-columns: 1fr; } }
-  .snap-card { padding: 0.75rem 1rem; }
+  @media (max-width: 800px) {
+    .snap-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .snap-card {
+    padding: 0.75rem 1rem;
+  }
   .snap-card h3 {
     margin: 0 0 0.5rem;
     font-size: 0.7rem;
@@ -95,14 +120,18 @@
   .snap-table td {
     padding: 0.25rem 0.4rem;
     color: var(--muted-foreground);
-    border-bottom: 1px solid rgba(255,255,255,0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 220px;
   }
-  .snap-table tr.is-new td { color: var(--warning); }
-  .snap-table tr.is-new td::before { content: ''; }
+  .snap-table tr.is-new td {
+    color: var(--warning);
+  }
+  .snap-table tr.is-new td::before {
+    content: '';
+  }
   .snap-new-badge {
     font-size: 0.55rem;
     font-weight: 700;
@@ -115,7 +144,11 @@
     font-size: 0.75rem;
     padding: 0.5rem 0.4rem;
   }
-  .mc-tag-list { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .mc-tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
   .mc-tag {
     display: inline-block;
     padding: 0.2rem 0.5rem;
@@ -127,7 +160,9 @@
   }
 
   /* alerts */
-  .alerts-section { margin-bottom: 1.25rem; }
+  .alerts-section {
+    margin-bottom: 1.25rem;
+  }
   .alert-row {
     display: flex;
     align-items: baseline;
@@ -136,7 +171,9 @@
     font-size: var(--text-8);
     border-bottom: 1px solid var(--border);
   }
-  .alert-row:last-child { border-bottom: none; }
+  .alert-row:last-child {
+    border-bottom: none;
+  }
   .level {
     font-size: 0.65rem;
     font-weight: 700;
@@ -145,11 +182,22 @@
     flex-shrink: 0;
     font-family: var(--font-mono);
   }
-  .level-1 { color: #38bdf8; }
-  .level-2 { color: var(--warning); }
-  .level-3 { color: var(--danger); }
-  .level-4 { color: #ef4444; text-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
-  .level-5 { color: #a855f7; }
+  .level-1 {
+    color: #38bdf8;
+  }
+  .level-2 {
+    color: var(--warning);
+  }
+  .level-3 {
+    color: var(--danger);
+  }
+  .level-4 {
+    color: #ef4444;
+    text-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+  }
+  .level-5 {
+    color: #a855f7;
+  }
   .alert-time {
     width: 4.5rem;
     color: var(--faint-foreground);
@@ -164,14 +212,28 @@
     font-size: 0.72rem;
     flex-shrink: 0;
   }
-  .alert-msg { color: var(--muted-foreground); word-break: break-word; }
+  .alert-msg {
+    color: var(--muted-foreground);
+    word-break: break-word;
+  }
 
   /* events */
-  .events-section { margin-bottom: 1.25rem; }
-  .events-controls { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-  .events-controls input[type=date],
-  .events-controls input[type=search] { font-size: var(--text-8); padding: 0.3rem 0.5rem; }
-  .events-controls input[type=search] { min-width: 180px; }
+  .events-section {
+    margin-bottom: 1.25rem;
+  }
+  .events-controls {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .events-controls input[type='date'],
+  .events-controls input[type='search'] {
+    font-size: var(--text-8);
+    padding: 0.3rem 0.5rem;
+  }
+  .events-controls input[type='search'] {
+    min-width: 180px;
+  }
   .event-row {
     display: flex;
     align-items: baseline;
@@ -181,8 +243,14 @@
     font-family: var(--font-mono);
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   }
-  .event-row:last-child { border-bottom: none; }
-  .event-time { width: 5.5rem; color: var(--faint-foreground); flex-shrink: 0; }
+  .event-row:last-child {
+    border-bottom: none;
+  }
+  .event-time {
+    width: 5.5rem;
+    color: var(--faint-foreground);
+    flex-shrink: 0;
+  }
   .event-type {
     width: 7.5rem;
     color: var(--muted-foreground);
@@ -190,7 +258,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .event-msg { color: var(--muted-foreground); word-break: break-word; }
+  .event-msg {
+    color: var(--muted-foreground);
+    word-break: break-word;
+  }
 
   /* machine settings */
   .settings-section {
@@ -198,7 +269,9 @@
     padding-top: var(--space-5);
     border-top: 1px solid var(--border);
   }
-  .setting-row > label { width: 5.5rem; }
+  .setting-row > label {
+    width: 5.5rem;
+  }
   .setting-row code {
     font-size: 0.72rem;
     word-break: break-all;
@@ -208,70 +281,73 @@
 </style>
 
 <main>
-    <div id="loading">Loading&hellip;</div>
+  <div id="loading">Loading&hellip;</div>
 
-    <div id="app" class="detail-wrap" hidden>
-      <a href="/" class="back-link">&larr; Dashboard</a>
+  <div id="app" class="detail-wrap" hidden>
+    <a href="/" class="back-link">&larr; Dashboard</a>
 
-      <div class="detail-header">
-        <div class="detail-title">
-          <span class="status-dot" id="status-dot"></span>
-          <h1 id="machine-name"></h1>
-          <button class="edit-btn" id="edit-name-btn" title="Rename">&#9998;</button>
-          <span class="badge" id="status-badge"></span>
-        </div>
-        <div class="detail-meta" id="machine-meta"></div>
+    <div class="detail-header">
+      <div class="detail-title">
+        <span class="status-dot" id="status-dot"></span>
+        <h1 id="machine-name"></h1>
+        <button class="edit-btn" id="edit-name-btn" title="Rename">&#9998;</button>
+        <span class="badge" id="status-badge"></span>
       </div>
-
-      <div class="stat-grid" id="stat-grid"></div>
-      <div class="snap-grid" id="snap-grid"></div>
-
-      <section class="alerts-section">
-        <div class="section-head">
-          <h2>Alerts <span id="alert-count"></span></h2>
-          <button class="outline small" id="clear-alerts-btn" hidden>Clear all</button>
-        </div>
-        <div class="card" id="alerts-list"></div>
-      </section>
-
-      <section class="events-section">
-        <div class="section-head">
-          <h2>Events</h2>
-          <div class="events-controls">
-            <input type="date" id="event-date" />
-            <input type="search" placeholder="Search events..." id="event-search" />
-          </div>
-        </div>
-        <div class="card" id="events-list"></div>
-        <button class="outline small mt-2" id="load-more-btn" hidden>Load more</button>
-      </section>
-
-      <section class="settings-section">
-        <div class="section-head"><h2>Settings</h2></div>
-        <div class="setting-row">
-          <label>Machine ID</label>
-          <code id="mid-display"></code>
-          <button class="outline small" id="copy-id-btn">Copy</button>
-        </div>
-        <div class="setting-row">
-          <label>Uninstall</label>
-          <code id="uninstall-cmd">systemctl disable snitchr-agent --now &amp;&amp; rm /usr/local/bin/snitchr-agent &amp;&amp; rm -rf /etc/snitchr</code>
-          <button class="outline small" id="copy-uninstall-btn">Copy</button>
-        </div>
-        <div class="danger-zone">
-          <h3>Danger zone</h3>
-          <p>Permanently remove this machine and all its stored data (status, events, alerts).</p>
-          <button data-variant="danger" class="small" id="delete-btn">Delete this machine</button>
-        </div>
-      </section>
+      <div class="detail-meta" id="machine-meta"></div>
     </div>
 
-    <div id="not-found" class="detail-wrap" hidden>
-      <h2>Machine not found</h2>
-      <p>This machine may have been removed.</p>
-      <a href="/">&larr; Back to dashboard</a>
-    </div>
-  </main>
+    <div class="stat-grid" id="stat-grid"></div>
+    <div class="snap-grid" id="snap-grid"></div>
+
+    <section class="alerts-section">
+      <div class="section-head">
+        <h2>Alerts <span id="alert-count"></span></h2>
+        <button class="outline small" id="clear-alerts-btn" hidden>Clear all</button>
+      </div>
+      <div class="card" id="alerts-list"></div>
+    </section>
+
+    <section class="events-section">
+      <div class="section-head">
+        <h2>Events</h2>
+        <div class="events-controls">
+          <input type="date" id="event-date" />
+          <input type="search" placeholder="Search events..." id="event-search" />
+        </div>
+      </div>
+      <div class="card" id="events-list"></div>
+      <button class="outline small mt-2" id="load-more-btn" hidden>Load more</button>
+    </section>
+
+    <section class="settings-section">
+      <div class="section-head"><h2>Settings</h2></div>
+      <div class="setting-row">
+        <label>Machine ID</label>
+        <code id="mid-display"></code>
+        <button class="outline small" id="copy-id-btn">Copy</button>
+      </div>
+      <div class="setting-row">
+        <label>Uninstall</label>
+        <code id="uninstall-cmd"
+          >systemctl disable snitchr-agent --now &amp;&amp; rm /usr/local/bin/snitchr-agent &amp;&amp; rm -rf
+          /etc/snitchr</code
+        >
+        <button class="outline small" id="copy-uninstall-btn">Copy</button>
+      </div>
+      <div class="danger-zone">
+        <h3>Danger zone</h3>
+        <p>Permanently remove this machine and all its stored data (status, events, alerts).</p>
+        <button data-variant="danger" class="small" id="delete-btn">Delete this machine</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="not-found" class="detail-wrap" hidden>
+    <h2>Machine not found</h2>
+    <p>This machine may have been removed.</p>
+    <a href="/">&larr; Back to dashboard</a>
+  </div>
+</main>
 
 <dialog id="rename-dialog">
   <header><h3>Rename machine</h3></header>
@@ -295,7 +371,11 @@
 
 <script type="module">
   const $ = id => document.getElementById(id);
-  const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+  const esc = s => {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  };
 
   // EventLevel: 0=HEARTBEAT 1=INFO 2=WARN 3=ERROR 4=CRITICAL 5=SHUTDOWN
   const LEVELS = { 1: 'INFO', 2: 'WARN', 3: 'ERROR', 4: 'CRIT', 5: 'DOWN' };
@@ -313,7 +393,9 @@
 
   const upStr = s => {
     if (!s) return '0s';
-    const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+    const d = Math.floor(s / 86400),
+      h = Math.floor((s % 86400) / 3600),
+      m = Math.floor((s % 3600) / 60);
     return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
   };
 
@@ -329,7 +411,10 @@
 
   const api = async (path, opts) => {
     const res = await fetch(path, opts);
-    if (res.status === 401) { location.href = '/'; return null; }
+    if (res.status === 401) {
+      location.href = '/';
+      return null;
+    }
     if (!res.ok) return null;
     return res.json();
   };
@@ -379,19 +464,23 @@
 
       // stats
       const stats = [];
-      if (typeof dd.cpu === 'number')
-        stats.push({ l: 'CPU', v: `${dd.cpu.toFixed(1)}%`, p: Math.round(dd.cpu) });
+      if (typeof dd.cpu === 'number') stats.push({ l: 'CPU', v: `${dd.cpu.toFixed(1)}%`, p: Math.round(dd.cpu) });
       if (dd.mem) {
         const pct = Math.round((dd.mem[0] / dd.mem[1]) * 100);
         stats.push({ l: 'Memory', v: `${pct}%`, p: pct, s: `${dd.mem[0]} / ${dd.mem[1]} MB` });
       }
       if (dd.disk?.length) {
         const dp = d.diskPrediction;
-        let diskSub = '', diskCls = '', diskTip = '';
+        let diskSub = '',
+          diskCls = '',
+          diskTip = '';
         if (dp?.trend === 'filling' && dp.hoursToThreshold != null && dp.hoursToThreshold <= 2160) {
-          const t = dp.hoursToThreshold < 1 ? `${Math.round(dp.hoursToThreshold * 60)}m`
-            : dp.hoursToThreshold <= 48 ? `${Math.round(dp.hoursToThreshold)}h`
-            : `${Math.round(dp.hoursToThreshold / 24)}d`;
+          const t =
+            dp.hoursToThreshold < 1
+              ? `${Math.round(dp.hoursToThreshold * 60)}m`
+              : dp.hoursToThreshold <= 48
+                ? `${Math.round(dp.hoursToThreshold)}h`
+                : `${Math.round(dp.hoursToThreshold / 24)}d`;
           diskSub = `↗ ~${t} to 90%`;
           diskCls = dp.hoursToThreshold <= 12 ? 'disk-critical' : dp.hoursToThreshold <= 48 ? 'disk-filling' : '';
           diskTip = `Based on recent usage trend, disk is predicted to reach 90% in ~${t}`;
@@ -407,46 +496,88 @@
           diskSub = '→ stable';
           diskTip = 'Disk velocity is flat — no fill trend detected';
         }
-        stats.push({ l: 'Disk', v: `${dd.disk[0]}%`, p: dd.disk[0], s: diskSub || undefined, sc: diskCls, st: diskTip });
+        stats.push({
+          l: 'Disk',
+          v: `${dd.disk[0]}%`,
+          p: dd.disk[0],
+          s: diskSub || undefined,
+          sc: diskCls,
+          st: diskTip,
+        });
       }
       if (dd.load)
-        stats.push({ l: 'Load', v: dd.load[0]?.toFixed(2), s: `5m ${dd.load[1]?.toFixed(2)}  15m ${dd.load[2]?.toFixed(2)}` });
-      if (dd.net)
-        stats.push({ l: 'Network', v: `\u2193 ${fmtBytes(dd.net[0])}`, s: `\u2191 ${fmtBytes(dd.net[1])}` });
+        stats.push({
+          l: 'Load',
+          v: dd.load[0]?.toFixed(2),
+          s: `5m ${dd.load[1]?.toFixed(2)}  15m ${dd.load[2]?.toFixed(2)}`,
+        });
+      if (dd.net) stats.push({ l: 'Network', v: `\u2193 ${fmtBytes(dd.net[0])}`, s: `\u2191 ${fmtBytes(dd.net[1])}` });
       if (typeof dd.up === 'number')
         stats.push({ l: 'Uptime', v: upStr(dd.up), s: dd.procs ? `${dd.procs} processes` : '' });
 
-      $('stat-grid').innerHTML = stats.map(s => `
+      $('stat-grid').innerHTML = stats
+        .map(
+          s => `
         <div class="card stat-card">
           <div class="stat-label">${s.l}</div>
           <div class="stat-value">${esc(String(s.v))}</div>
           ${s.p != null ? `<progress value="${s.p}" max="100"></progress>` : ''}
           ${s.s ? `<div class="stat-sub ${s.sc || ''}"${s.st ? ` data-tip="${s.st}"` : ''}>${esc(s.s)}</div>` : ''}
-        </div>`).join('');
+        </div>`,
+        )
+        .join('');
 
       // snapshot tables
       const alerts = d.alerts || [];
-      const newProcs = new Set(alerts.filter(a => a.d?.type === 'new_process').map(a => {
-        const m = a.d?.msg?.match(/: (.+?) \(user:/); return m ? m[1] : '';
-      }).filter(Boolean));
-      const newPorts = new Set(alerts.filter(a => a.d?.type === 'new_port').map(a => {
-        const m = a.d?.msg?.match(/:(\d+)/); return m ? m[1] : '';
-      }).filter(Boolean));
-      const newMounts = new Set(alerts.filter(a => a.d?.type === 'mount_change' && a.d?.msg?.startsWith('New')).map(a => {
-        const m = a.d?.msg?.match(/on (.+?) \(/); return m ? m[1] : '';
-      }).filter(Boolean));
+      const newProcs = new Set(
+        alerts
+          .filter(a => a.d?.type === 'new_process')
+          .map(a => {
+            const m = a.d?.msg?.match(/: (.+?) \(user:/);
+            return m ? m[1] : '';
+          })
+          .filter(Boolean),
+      );
+      const newPorts = new Set(
+        alerts
+          .filter(a => a.d?.type === 'new_port')
+          .map(a => {
+            const m = a.d?.msg?.match(/:(\d+)/);
+            return m ? m[1] : '';
+          })
+          .filter(Boolean),
+      );
+      const newMounts = new Set(
+        alerts
+          .filter(a => a.d?.type === 'mount_change' && a.d?.msg?.startsWith('New'))
+          .map(a => {
+            const m = a.d?.msg?.match(/on (.+?) \(/);
+            return m ? m[1] : '';
+          })
+          .filter(Boolean),
+      );
 
       const cards = [];
 
       // ports table
       if (dd.portList?.length || dd.ports) {
         const rows = dd.portList
-          ? dd.portList.map(p => `<tr class="${newPorts.has(String(p.port)) ? 'is-new' : ''}">
+          ? dd.portList
+              .map(
+                p => `<tr class="${newPorts.has(String(p.port)) ? 'is-new' : ''}">
               <td>${p.port}${newPorts.has(String(p.port)) ? '<span class="snap-new-badge">NEW</span>' : ''}</td>
-              <td>${esc(p.addr)}</td><td>${esc(p.proc)}</td></tr>`).join('')
-          : dd.ports.split(',').filter(Boolean).map(p => `<tr class="${newPorts.has(p) ? 'is-new' : ''}">
+              <td>${esc(p.addr)}</td><td>${esc(p.proc)}</td></tr>`,
+              )
+              .join('')
+          : dd.ports
+              .split(',')
+              .filter(Boolean)
+              .map(
+                p => `<tr class="${newPorts.has(p) ? 'is-new' : ''}">
               <td>${esc(p)}${newPorts.has(p) ? '<span class="snap-new-badge">NEW</span>' : ''}</td>
-              <td>-</td><td>-</td></tr>`).join('');
+              <td>-</td><td>-</td></tr>`,
+              )
+              .join('');
         cards.push(`<div class="card snap-card"><h3>Listening Ports</h3>
           <table class="snap-table"><thead><tr><th>Port</th><th>Bind</th><th>Process</th></tr></thead>
           <tbody>${rows || '<tr><td colspan="3" class="snap-empty">None</td></tr>'}</tbody></table></div>`);
@@ -455,8 +586,12 @@
       // processes table
       if (dd.procList) {
         const procs = dd.procList.split('|').filter(Boolean);
-        const rows = procs.map(p => `<tr class="${newProcs.has(p) ? 'is-new' : ''}">
-          <td>${esc(p)}${newProcs.has(p) ? '<span class="snap-new-badge">NEW</span>' : ''}</td></tr>`).join('');
+        const rows = procs
+          .map(
+            p => `<tr class="${newProcs.has(p) ? 'is-new' : ''}">
+          <td>${esc(p)}${newProcs.has(p) ? '<span class="snap-new-badge">NEW</span>' : ''}</td></tr>`,
+          )
+          .join('');
         cards.push(`<div class="card snap-card"><h3>Processes (${procs.length})</h3>
           <table class="snap-table"><thead><tr><th>Name</th></tr></thead>
           <tbody>${rows}</tbody></table></div>`);
@@ -464,9 +599,13 @@
 
       // mounts table
       if (dd.mountList?.length) {
-        const rows = dd.mountList.map(m => `<tr class="${newMounts.has(m.target) ? 'is-new' : ''}">
+        const rows = dd.mountList
+          .map(
+            m => `<tr class="${newMounts.has(m.target) ? 'is-new' : ''}">
           <td>${esc(m.src)}${newMounts.has(m.target) ? '<span class="snap-new-badge">NEW</span>' : ''}</td>
-          <td>${esc(m.target)}</td><td>${esc(m.fs)}</td></tr>`).join('');
+          <td>${esc(m.target)}</td><td>${esc(m.fs)}</td></tr>`,
+          )
+          .join('');
         cards.push(`<div class="card snap-card"><h3>Mounts</h3>
           <table class="snap-table"><thead><tr><th>Source</th><th>Target</th><th>FS</th></tr></thead>
           <tbody>${rows}</tbody></table></div>`);
@@ -474,9 +613,13 @@
 
       // tty sessions table
       if (dd.ttyList?.length) {
-        const rows = dd.ttyList.map(t => `<tr>
+        const rows = dd.ttyList
+          .map(
+            t => `<tr>
           <td>${esc(t.user)}</td><td>${esc(t.tty)}</td>
-          <td>${esc(t.from || '-')}</td><td>${esc(t.login)}</td></tr>`).join('');
+          <td>${esc(t.from || '-')}</td><td>${esc(t.login)}</td></tr>`,
+          )
+          .join('');
         cards.push(`<div class="card snap-card"><h3>TTY Sessions</h3>
           <table class="snap-table"><thead><tr><th>User</th><th>TTY</th><th>From</th><th>Login</th></tr></thead>
           <tbody>${rows}</tbody></table></div>`);
@@ -504,13 +647,17 @@
         $('alerts-list').innerHTML = '<div class="empty-hint">No alerts</div>';
         return;
       }
-      $('alerts-list').innerHTML = filtered.map(a => `
+      $('alerts-list').innerHTML = filtered
+        .map(
+          a => `
         <div class="alert-row">
           <span class="level level-${a.t}">${LEVELS[a.t] || 'LVL' + a.t}</span>
           <span class="alert-time">${ago(a.ts)}</span>
           <span class="alert-type">${esc(a.d?.type || '')}</span>
           <span class="alert-msg">${esc(a.d?.msg || '')}</span>
-        </div>`).join('');
+        </div>`,
+        )
+        .join('');
     };
 
     $('clear-alerts-btn').addEventListener('click', async () => {
@@ -531,7 +678,10 @@
     dateInput.value = evDate;
 
     const loadEvents = async (reset = true) => {
-      if (reset) { evAll = []; evCursor = null; }
+      if (reset) {
+        evAll = [];
+        evCursor = null;
+      }
       const p = new URLSearchParams({ date: evDate, limit: '50' });
       if (evCursor) p.set('cursor', evCursor);
       const res = await api(`/api/machines/${machineId}/events?${p}`);
@@ -547,23 +697,39 @@
 
     const renderEvents = () => {
       const q = searchInput.value.toLowerCase();
-      const list = q ? evAll.filter(e => JSON.stringify(e.d || {}).toLowerCase().includes(q)) : evAll;
+      const list = q
+        ? evAll.filter(e =>
+            JSON.stringify(e.d || {})
+              .toLowerCase()
+              .includes(q),
+          )
+        : evAll;
       if (!list.length) {
         evList.innerHTML = `<div class="empty-hint">No events${q ? ' matching search' : ' for this date'}</div>`;
         return;
       }
-      evList.innerHTML = list.map(e => `
+      evList.innerHTML = list
+        .map(
+          e => `
         <div class="event-row">
           <span class="event-time">${fmtTime(e.ts)}</span>
           <span class="level level-${e.t}">${LEVELS[e.t] || '?'}</span>
           <span class="event-type">${esc(e.d?.type || '')}</span>
           <span class="event-msg">${esc(e.d?.msg || '')}</span>
-        </div>`).join('');
+        </div>`,
+        )
+        .join('');
     };
 
-    dateInput.addEventListener('change', () => { evDate = dateInput.value; loadEvents(); });
+    dateInput.addEventListener('change', () => {
+      evDate = dateInput.value;
+      loadEvents();
+    });
     let searchTimer;
-    searchInput.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(renderEvents, 150); });
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(renderEvents, 150);
+    });
     moreBtn.addEventListener('click', () => loadEvents(false));
 
     // ── Initial load ──
@@ -590,24 +756,35 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ label }),
       });
-      if (res?.ok) { rnDialog.close(); cur.label = label || undefined; render(cur); }
+      if (res?.ok) {
+        rnDialog.close();
+        cur.label = label || undefined;
+        render(cur);
+      }
     };
     $('rename-save').addEventListener('click', doRename);
-    rnInput.addEventListener('keydown', e => { if (e.key === 'Enter') doRename(); });
-    rnDialog.addEventListener('click', e => { if (e.target === rnDialog) rnDialog.close(); });
+    rnInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') doRename();
+    });
+    rnDialog.addEventListener('click', e => {
+      if (e.target === rnDialog) rnDialog.close();
+    });
 
     // ── Delete ──
     const delDialog = $('delete-dialog');
     $('delete-btn').addEventListener('click', () => {
       const name = esc(cur.label || cur.id.slice(0, 12));
-      $('delete-msg').innerHTML = `This will permanently remove <strong>${name}</strong> and all its stored data. This cannot be undone.`;
+      $('delete-msg').innerHTML =
+        `This will permanently remove <strong>${name}</strong> and all its stored data. This cannot be undone.`;
       delDialog.showModal();
     });
     $('delete-cancel').addEventListener('click', () => delDialog.close());
     $('delete-confirm').addEventListener('click', async () => {
       if ((await api(`/api/machines/${machineId}`, { method: 'DELETE' }))?.ok) location.href = '/';
     });
-    delDialog.addEventListener('click', e => { if (e.target === delDialog) delDialog.close(); });
+    delDialog.addEventListener('click', e => {
+      if (e.target === delDialog) delDialog.close();
+    });
 
     // ── Copy helpers ──
     const copyTo = (btnId, fn) => {
@@ -620,5 +797,4 @@
     copyTo('copy-id-btn', () => cur.id);
     copyTo('copy-uninstall-btn', () => $('uninstall-cmd').textContent);
   }
-
 </script>

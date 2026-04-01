@@ -359,13 +359,20 @@ describe('validateNotificationChannel', () => {
   });
 
   it('accepts webhook with secret', () => {
-    const r = validateNotificationChannel({ type: 'webhook', url: 'https://example.com/hook', secret: 's3cret', enabled: true });
+    const r = validateNotificationChannel({
+      type: 'webhook',
+      url: 'https://example.com/hook',
+      secret: 's3cret',
+      enabled: true,
+    });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.value).toMatchObject({ type: 'webhook', secret: 's3cret' });
   });
 
   it('rejects webhook with non-string secret', () => {
-    expect(validateNotificationChannel({ type: 'webhook', url: 'https://example.com/hook', secret: 123, enabled: true }).ok).toBe(false);
+    expect(
+      validateNotificationChannel({ type: 'webhook', url: 'https://example.com/hook', secret: 123, enabled: true }).ok,
+    ).toBe(false);
   });
 
   it('rejects webhook with invalid URL', () => {
@@ -373,7 +380,11 @@ describe('validateNotificationChannel', () => {
   });
 
   it('accepts valid slack channel', () => {
-    const r = validateNotificationChannel({ type: 'slack', webhookUrl: 'https://hooks.slack.com/services/T/B/x', enabled: true });
+    const r = validateNotificationChannel({
+      type: 'slack',
+      webhookUrl: 'https://hooks.slack.com/services/T/B/x',
+      enabled: true,
+    });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.value).toMatchObject({ type: 'slack' });
   });

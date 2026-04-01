@@ -2,8 +2,7 @@ import { cshake256 } from '@noble/hashes/sha3-addons.js';
 
 export const str2uint8 = (str: string): Uint8Array => new TextEncoder().encode(str);
 
-export const toHex = (arr: Uint8Array): string =>
-  [...arr].map(b => b.toString(16).padStart(2, '0')).join('');
+export const toHex = (arr: Uint8Array): string => [...arr].map(b => b.toString(16).padStart(2, '0')).join('');
 
 export const fromHex = (hex: string): Uint8Array => {
   if (!hex || hex.length % 2 !== 0) throw new Error('Invalid hex string');
@@ -40,17 +39,25 @@ export const compactToken = (): string => {
 
 /** Normalize a user-supplied Crockford Base32 token for comparison. */
 export const normalizeToken = (raw: string): string =>
-  raw.toUpperCase().replaceAll('-', '').replaceAll(' ', '').replaceAll('O', '0').replaceAll('I', '1').replaceAll('L', '1');
+  raw
+    .toUpperCase()
+    .replaceAll('-', '')
+    .replaceAll(' ', '')
+    .replaceAll('O', '0')
+    .replaceAll('I', '1')
+    .replaceAll('L', '1');
 
 const MAGIC = str2uint8('snitchr_sh_salt_v1');
 const SHAKE_LEN = 128;
 
 /** CSHAKE256-based hash — retained for non-password use cases. */
 export const cshakeHash = (data: string, salt: Uint8Array): string =>
-  toHex(cshake256(str2uint8(data), {
-    personalization: new Uint8Array([...MAGIC, ...salt]),
-    dkLen: SHAKE_LEN,
-  }));
+  toHex(
+    cshake256(str2uint8(data), {
+      personalization: new Uint8Array([...MAGIC, ...salt]),
+      dkLen: SHAKE_LEN,
+    }),
+  );
 
 /**
  * Timing-safe string comparison via HMAC sign + verify.
@@ -59,7 +66,10 @@ export const cshakeHash = (data: string, salt: Uint8Array): string =>
  */
 export const timingSafeEqual = async (a: string, b: string): Promise<boolean> => {
   const enc = new TextEncoder();
-  const key = await crypto.subtle.generateKey({ name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']) as CryptoKey;
+  const key = (await crypto.subtle.generateKey({ name: 'HMAC', hash: 'SHA-256' }, false, [
+    'sign',
+    'verify',
+  ])) as CryptoKey;
   const sig = await crypto.subtle.sign('HMAC', key, enc.encode(a));
   return crypto.subtle.verify('HMAC', key, sig, enc.encode(b));
 };
@@ -69,13 +79,9 @@ const PBKDF2_KEY_BITS = 256;
 
 /** PBKDF2-HMAC-SHA-256 password hash (100 000 iterations, 256-bit output). */
 export const hashPassword = async (password: string, salt: Uint8Array): Promise<string> => {
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    str2uint8(password).buffer as ArrayBuffer,
-    'PBKDF2',
-    false,
-    ['deriveBits'],
-  );
+  const keyMaterial = await crypto.subtle.importKey('raw', str2uint8(password).buffer as ArrayBuffer, 'PBKDF2', false, [
+    'deriveBits',
+  ]);
   const derived = await crypto.subtle.deriveBits(
     { name: 'PBKDF2', hash: 'SHA-256', salt: salt.buffer as ArrayBuffer, iterations: PBKDF2_ITERATIONS },
     keyMaterial,

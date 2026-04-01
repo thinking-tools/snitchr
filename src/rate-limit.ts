@@ -16,11 +16,10 @@ type RateLimitRecord = { c: number; r: number };
  * Per-IP rate limiter backed by KVStore.
  * Uses `cf-connecting-ip` for client identification, falls back to `x-forwarded-for`.
  */
-export const rateLimit = ({ windowMs, limit, prefix }: RateLimitOpts) =>
+export const rateLimit =
+  ({ windowMs, limit, prefix }: RateLimitOpts) =>
   async (c: Context<{ Bindings: Bindings }>, next: Next) => {
-    const ip = c.req.header('cf-connecting-ip')
-      ?? c.req.header('x-forwarded-for')?.split(',')[0]?.trim()
-      ?? 'unknown';
+    const ip = c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
     const key = `rl:${prefix}:${ip}`;
     const kv = c.env.SNITCHR_CONFIG;
     const now = Date.now();
@@ -31,7 +30,9 @@ export const rateLimit = ({ windowMs, limit, prefix }: RateLimitOpts) =>
       try {
         const parsed = JSON.parse(raw) as RateLimitRecord;
         rec = now < parsed.r ? parsed : { c: 0, r: now + windowMs };
-      } catch { /* corrupted — start fresh */ }
+      } catch {
+        /* corrupted — start fresh */
+      }
     }
 
     rec.c++;

@@ -92,10 +92,14 @@ describe('Scheduled handler', () => {
   describe('disk velocity alerts', () => {
     const makeDiskSamples = (count: number, startPct: number, pctPerSample: number): DiskSample[] => {
       const now = Date.now();
-      return Array.from({ length: count }, (_, i) => [
-        now - (count - 1 - i) * 300_000, // 5min intervals
-        startPct + i * pctPerSample,
-      ] as DiskSample);
+      return Array.from(
+        { length: count },
+        (_, i) =>
+          [
+            now - (count - 1 - i) * 300_000, // 5min intervals
+            startPct + i * pctPerSample,
+          ] as DiskSample,
+      );
     };
 
     it('sends disk fill alert when prediction is within 24h', async () => {
@@ -108,7 +112,18 @@ describe('Scheduled handler', () => {
       const samples = makeDiskSamples(15, 70, 1);
       const status: MachineStatus = {
         lastSeen: Date.now(),
-        d: { ts: Date.now(), cpu: 10, up: 1000, procs: 50, mem: [1000, 4000], disk: [85], load: [0.5, 0.5, 0.5], net: [100, 100], ports: '22', users: 'root' },
+        d: {
+          ts: Date.now(),
+          cpu: 10,
+          up: 1000,
+          procs: 50,
+          mem: [1000, 4000],
+          disk: [85],
+          load: [0.5, 0.5, 0.5],
+          net: [100, 100],
+          ports: '22',
+          users: 'root',
+        },
         diskSamples: samples,
       };
       await store!.put(`m/${MACHINE_ID}/status.json`, JSON.stringify(status));
@@ -130,7 +145,18 @@ describe('Scheduled handler', () => {
       const samples = makeDiskSamples(15, 50, 0); // flat at 50%
       const status: MachineStatus = {
         lastSeen: Date.now(),
-        d: { ts: Date.now(), cpu: 10, up: 1000, procs: 50, mem: [1000, 4000], disk: [50], load: [0.5, 0.5, 0.5], net: [100, 100], ports: '22', users: 'root' },
+        d: {
+          ts: Date.now(),
+          cpu: 10,
+          up: 1000,
+          procs: 50,
+          mem: [1000, 4000],
+          disk: [50],
+          load: [0.5, 0.5, 0.5],
+          net: [100, 100],
+          ports: '22',
+          users: 'root',
+        },
         diskSamples: samples,
       };
       await store!.put(`m/${MACHINE_ID}/status.json`, JSON.stringify(status));
@@ -154,7 +180,18 @@ describe('Scheduled handler', () => {
       const samples = makeDiskSamples(15, 70, 1);
       const status: MachineStatus = {
         lastSeen: Date.now(),
-        d: { ts: Date.now(), cpu: 10, up: 1000, procs: 50, mem: [1000, 4000], disk: [85], load: [0.5, 0.5, 0.5], net: [100, 100], ports: '22', users: 'root' },
+        d: {
+          ts: Date.now(),
+          cpu: 10,
+          up: 1000,
+          procs: 50,
+          mem: [1000, 4000],
+          disk: [85],
+          load: [0.5, 0.5, 0.5],
+          net: [100, 100],
+          ports: '22',
+          users: 'root',
+        },
         diskSamples: samples,
       };
       await store!.put(`m/${MACHINE_ID}/status.json`, JSON.stringify(status));
@@ -178,7 +215,18 @@ describe('Scheduled handler', () => {
       const samples = makeDiskSamples(15, 60, -0.5);
       const status: MachineStatus = {
         lastSeen: Date.now(),
-        d: { ts: Date.now(), cpu: 10, up: 1000, procs: 50, mem: [1000, 4000], disk: [53], load: [0.5, 0.5, 0.5], net: [100, 100], ports: '22', users: 'root' },
+        d: {
+          ts: Date.now(),
+          cpu: 10,
+          up: 1000,
+          procs: 50,
+          mem: [1000, 4000],
+          disk: [53],
+          load: [0.5, 0.5, 0.5],
+          net: [100, 100],
+          ports: '22',
+          users: 'root',
+        },
         diskSamples: samples,
       };
       await store!.put(`m/${MACHINE_ID}/status.json`, JSON.stringify(status));
@@ -200,7 +248,18 @@ describe('Scheduled handler', () => {
       const samples = makeDiskSamples(15, 1, 0.3);
       const status: MachineStatus = {
         lastSeen: Date.now(),
-        d: { ts: Date.now(), cpu: 10, up: 1000, procs: 50, mem: [1000, 4000], disk: [5], load: [0.5, 0.5, 0.5], net: [100, 100], ports: '22', users: 'root' },
+        d: {
+          ts: Date.now(),
+          cpu: 10,
+          up: 1000,
+          procs: 50,
+          mem: [1000, 4000],
+          disk: [5],
+          load: [0.5, 0.5, 0.5],
+          net: [100, 100],
+          ports: '22',
+          users: 'root',
+        },
         diskSamples: samples,
       };
       await store!.put(`m/${MACHINE_ID}/status.json`, JSON.stringify(status));

@@ -67,7 +67,9 @@ export const signVapidJwt = async (
   );
   const pubJwk: any = await crypto.subtle.exportKey('jwk', rawPub);
   const privJwk = { ...pubJwk, d: vapidPrivateKey, key_ops: ['sign'] };
-  const privKey = await crypto.subtle.importKey('jwk', privJwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+  const privKey = await crypto.subtle.importKey('jwk', privJwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, [
+    'sign',
+  ]);
 
   const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, privKey, new TextEncoder().encode(unsigned));
   return `${unsigned}.${b64url(sig)}`;
@@ -128,11 +130,7 @@ export const encryptPayload = async (
   );
 
   // ECDH shared secret
-  const sharedBits = await crypto.subtle.deriveBits(
-    { name: 'ECDH', public: uaKey } as any,
-    serverKeys.privateKey,
-    256,
-  );
+  const sharedBits = await crypto.subtle.deriveBits({ name: 'ECDH', public: uaKey } as any, serverKeys.privateKey, 256);
   const sharedSecret = new Uint8Array(sharedBits);
 
   // HKDF #1: IKM from shared secret + auth
@@ -153,7 +151,11 @@ export const encryptPayload = async (
   // AES-128-GCM encrypt
   const aesKey = await crypto.subtle.importKey('raw', cek.buffer as ArrayBuffer, 'AES-GCM', false, ['encrypt']);
   const encrypted = new Uint8Array(
-    await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce.buffer as ArrayBuffer }, aesKey, padded.buffer as ArrayBuffer),
+    await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: nonce.buffer as ArrayBuffer },
+      aesKey,
+      padded.buffer as ArrayBuffer,
+    ),
   );
 
   // Build aes128gcm body: salt(16) || rs(4, BE) || idlen(1) || keyid(65) || ciphertext

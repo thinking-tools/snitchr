@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { app } from '../../app';
-import {
-  createTestEnv, setupConfig, addMachine, getSessionCookie,
-  validHeartbeatPayload, json,
-} from '../helpers';
+import { createTestEnv, setupConfig, addMachine, getSessionCookie, validHeartbeatPayload, json } from '../helpers';
 import type { Bindings, HeartbeatData } from '../../types';
 import { InMemoryKV } from '../../kv';
 
@@ -11,16 +8,24 @@ const MACHINE_ID = 'snap-machine-001';
 const MACHINE_SECRET = 'b'.repeat(48);
 
 const ingest = (env: Bindings, payload: unknown) =>
-  app.request(`/m/${MACHINE_ID}/ingest`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${MACHINE_SECRET}` },
-    body: JSON.stringify(payload),
-  }, env);
+  app.request(
+    `/m/${MACHINE_ID}/ingest`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${MACHINE_SECRET}` },
+      body: JSON.stringify(payload),
+    },
+    env,
+  );
 
 const getMachine = (env: Bindings, session: string) =>
-  app.request(`/api/machines/${MACHINE_ID}`, {
-    headers: { Cookie: `session=${session}` },
-  }, env);
+  app.request(
+    `/api/machines/${MACHINE_ID}`,
+    {
+      headers: { Cookie: `session=${session}` },
+    },
+    env,
+  );
 
 const heartbeatWith = (snapshot: Partial<HeartbeatData>) => {
   const base = validHeartbeatPayload();
@@ -46,7 +51,10 @@ describe('Snapshot fields in heartbeat', () => {
 
   it('accepts heartbeat with portList', async () => {
     const payload = heartbeatWith({
-      portList: [{ port: 22, addr: '0.0.0.0', proc: 'sshd' }, { port: 80, addr: '0.0.0.0', proc: 'nginx' }],
+      portList: [
+        { port: 22, addr: '0.0.0.0', proc: 'sshd' },
+        { port: 80, addr: '0.0.0.0', proc: 'nginx' },
+      ],
     });
     const res = await ingest(env, payload);
     expect(res.status).toBe(200);
@@ -79,12 +87,15 @@ describe('Snapshot fields in heartbeat', () => {
   });
 
   it('stores snapshot fields and returns them via API', async () => {
-    await ingest(env, heartbeatWith({
-      procList: 'nginx|sshd',
-      portList: [{ port: 22, addr: '0.0.0.0', proc: 'sshd' }],
-      mountList: [{ src: '/dev/sda1', target: '/', fs: 'ext4' }],
-      ttyList: [{ user: 'root', tty: 'pts/0', from: '10.0.0.1', login: 1700000000 }],
-    }));
+    await ingest(
+      env,
+      heartbeatWith({
+        procList: 'nginx|sshd',
+        portList: [{ port: 22, addr: '0.0.0.0', proc: 'sshd' }],
+        mountList: [{ src: '/dev/sda1', target: '/', fs: 'ext4' }],
+        ttyList: [{ user: 'root', tty: 'pts/0', from: '10.0.0.1', login: 1700000000 }],
+      }),
+    );
 
     const res = await getMachine(env, session);
     const body = await json(res);
@@ -96,10 +107,13 @@ describe('Snapshot fields in heartbeat', () => {
 
   it('preserves snapshot fields when next heartbeat omits them', async () => {
     // first heartbeat with snapshot
-    await ingest(env, heartbeatWith({
-      procList: 'nginx|sshd',
-      portList: [{ port: 22, addr: '0.0.0.0', proc: 'sshd' }],
-    }));
+    await ingest(
+      env,
+      heartbeatWith({
+        procList: 'nginx|sshd',
+        portList: [{ port: 22, addr: '0.0.0.0', proc: 'sshd' }],
+      }),
+    );
 
     // second heartbeat without snapshot
     await ingest(env, validHeartbeatPayload());

@@ -103,7 +103,12 @@ describe('Setup wizard', () => {
   it('rejects S3 mode with missing fields', async () => {
     const res = await app.request(
       '/api/setup',
-      jsonPost({ password: 'testpassword123', passwordConfirm: 'testpassword123', storageMode: 's3', s3Endpoint: 'https://s3.example.com' }),
+      jsonPost({
+        password: 'testpassword123',
+        passwordConfirm: 'testpassword123',
+        storageMode: 's3',
+        s3Endpoint: 'https://s3.example.com',
+      }),
       env,
     );
     expect(res.status).toBe(400);

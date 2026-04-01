@@ -1,4 +1,11 @@
-import { EventLevel, EVENT_FEATURE_MAP, type AgentFeatures, type AlertData, type EventEntry, type NotificationChannelConfig } from './types';
+import {
+  EventLevel,
+  EVENT_FEATURE_MAP,
+  type AgentFeatures,
+  type AlertData,
+  type EventEntry,
+  type NotificationChannelConfig,
+} from './types';
 
 type Ok<T> = { ok: true; value: T };
 type Err = { ok: false; error: string };
@@ -37,9 +44,12 @@ export const validateHeartbeat = (r: Record<string, unknown>): Result<true> => {
     r.users.length > 1000
   )
     return err('Invalid heartbeat');
-  if (r.procList !== undefined && (typeof r.procList !== 'string' || r.procList.length > 50_000)) return err('Invalid procList');
-  if (r.portList !== undefined && (!Array.isArray(r.portList) || r.portList.length > 500)) return err('Invalid portList');
-  if (r.mountList !== undefined && (!Array.isArray(r.mountList) || r.mountList.length > 500)) return err('Invalid mountList');
+  if (r.procList !== undefined && (typeof r.procList !== 'string' || r.procList.length > 50_000))
+    return err('Invalid procList');
+  if (r.portList !== undefined && (!Array.isArray(r.portList) || r.portList.length > 500))
+    return err('Invalid portList');
+  if (r.mountList !== undefined && (!Array.isArray(r.mountList) || r.mountList.length > 500))
+    return err('Invalid mountList');
   if (r.ttyList !== undefined && (!Array.isArray(r.ttyList) || r.ttyList.length > 500)) return err('Invalid ttyList');
   return ok(true);
 };
@@ -57,12 +67,7 @@ export const isFeatureEnabled = (agentFeatures: AgentFeatures | undefined, event
   return agentFeatures?.[feature] !== false;
 };
 
-export const isDuplicateAlert = (
-  alerts: EventEntry[],
-  alert: AlertData,
-  ts: number,
-  windowMs: number,
-): boolean =>
+export const isDuplicateAlert = (alerts: EventEntry[], alert: AlertData, ts: number, windowMs: number): boolean =>
   alerts.some(a => {
     const prev = a.d as AlertData;
     return prev?.type === alert.type && prev?.msg === alert.msg && ts - a.ts < windowMs;
@@ -110,7 +115,12 @@ export const validateNotificationChannel = (ch: unknown): Result<NotificationCha
       const r = validateHttpUrl(c.url);
       if (!r.ok) return r;
       if (c.secret !== undefined && typeof c.secret !== 'string') return err('secret must be string');
-      return ok({ type: 'webhook', url: r.value, secret: c.secret as string | undefined, enabled: c.enabled } as NotificationChannelConfig);
+      return ok({
+        type: 'webhook',
+        url: r.value,
+        secret: c.secret as string | undefined,
+        enabled: c.enabled,
+      } as NotificationChannelConfig);
     }
     case 'slack': {
       const r = validateHttpUrl(c.webhookUrl);

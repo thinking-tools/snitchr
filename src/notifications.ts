@@ -1,9 +1,4 @@
-import {
-  EventLevel,
-  EVENT_LEVEL_LABEL,
-  type NotificationChannelConfig,
-  type NotificationPayload,
-} from './types';
+import { EventLevel, EVENT_LEVEL_LABEL, type NotificationChannelConfig, type NotificationPayload } from './types';
 import { randomBytes, toHex } from './crypto';
 import type { KVStore } from './kv';
 import { sendWebPush, type VapidKeys, type PushSubscriptionRecord } from './webpush';
@@ -11,7 +6,10 @@ import { sendWebPush, type VapidKeys, type PushSubscriptionRecord } from './webp
 export type NotifyDeps = { kv?: KVStore; vapidKeys?: VapidKeys; contactEmail?: string };
 
 /** Extract VAPID keys from config, returns undefined if not set. */
-export const vapidKeysFromConfig = (config: { vapidPublicKey?: string; vapidPrivateKey?: string }): VapidKeys | undefined =>
+export const vapidKeysFromConfig = (config: {
+  vapidPublicKey?: string;
+  vapidPrivateKey?: string;
+}): VapidKeys | undefined =>
   config.vapidPublicKey && config.vapidPrivateKey
     ? { publicKey: config.vapidPublicKey, privateKey: config.vapidPrivateKey }
     : undefined;
@@ -25,7 +23,7 @@ type NotificationChannel = {
 // ── Channel factories ──────────────────────────────────────────────────
 
 const createNtfyChannel = (endpoint: string): NotificationChannel => ({
-  send: async (payload) => {
+  send: async payload => {
     const headers: Record<string, string> = {
       Title: payload.title,
       Priority: payload.priority,
@@ -45,7 +43,9 @@ const webhookBody = (payload: NotificationPayload): string =>
     id: `evt_${toHex(randomBytes(8))}`,
     event: payload.event,
     timestamp: new Date().toISOString(),
-    machine: payload.machineId ? { id: payload.machineId, label: payload.machineLabel ?? payload.machineId } : undefined,
+    machine: payload.machineId
+      ? { id: payload.machineId, label: payload.machineLabel ?? payload.machineId }
+      : undefined,
     level: payload.level,
     levelName: EVENT_LEVEL_LABEL[payload.level] ?? 'UNKNOWN',
     title: payload.title,
@@ -54,15 +54,19 @@ const webhookBody = (payload: NotificationPayload): string =>
   });
 
 const hmacSign = async (secret: string, content: string): Promise<string> => {
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, [
-    'sign',
-  ]);
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
   const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(content)));
-  return `sha256=${Array.from(sig, (b) => b.toString(16).padStart(2, '0')).join('')}`;
+  return `sha256=${Array.from(sig, b => b.toString(16).padStart(2, '0')).join('')}`;
 };
 
 const createWebhookChannel = (url: string, secret?: string): NotificationChannel => ({
-  send: async (payload) => {
+  send: async payload => {
     const body = webhookBody(payload);
     const ts = Math.floor(Date.now() / 1000).toString();
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -88,7 +92,7 @@ const slackColor = (payload: NotificationPayload): string => {
 };
 
 const createSlackChannel = (webhookUrl: string): NotificationChannel => ({
-  send: async (payload) => {
+  send: async payload => {
     const body = JSON.stringify({
       attachments: [
         {
@@ -119,7 +123,7 @@ const isTransientError = (err: unknown): boolean => {
 const PUSH_SUBS_KEY = 'push_subscriptions';
 
 const createWebPushChannel = (kv: KVStore, vapidKeys: VapidKeys, contact: string): NotificationChannel => ({
-  send: async (payload) => {
+  send: async payload => {
     const raw = await kv.get(PUSH_SUBS_KEY);
     if (!raw) return;
     let subs: PushSubscriptionRecord[];
@@ -139,8 +143,8 @@ const createWebPushChannel = (kv: KVStore, vapidKeys: VapidKeys, contact: string
     });
 
     const dead: string[] = [];
-    const results = await Promise.allSettled(subs.map((sub) => sendWebPush(sub, pushPayload, vapidKeys, contact)));
-    const anyFulfilled = results.some((r) => r.status === 'fulfilled');
+    const results = await Promise.allSettled(subs.map(sub => sendWebPush(sub, pushPayload, vapidKeys, contact)));
+    const anyFulfilled = results.some(r => r.status === 'fulfilled');
 
     for (let i = 0; i < results.length; i++) {
       const r = results[i];
@@ -154,7 +158,7 @@ const createWebPushChannel = (kv: KVStore, vapidKeys: VapidKeys, contact: string
     }
 
     if (dead.length) {
-      const live = subs.filter((s) => !dead.includes(s.endpoint));
+      const live = subs.filter(s => !dead.includes(s.endpoint));
       await kv.put(PUSH_SUBS_KEY, JSON.stringify(live));
     }
   },
@@ -183,7 +187,7 @@ const channelFromConfig = (config: NotificationChannelConfig, deps?: NotifyDeps)
 
 /** Check if any notification channel is enabled. */
 export const hasEnabledChannels = (notifications: Record<string, NotificationChannelConfig>): boolean =>
-  Object.values(notifications).some((ch) => ch.enabled);
+  Object.values(notifications).some(ch => ch.enabled);
 
 /** Send payload to all enabled channels. Errors are caught per-channel. */
 export const sendNotifications = async (
@@ -192,10 +196,10 @@ export const sendNotifications = async (
   deps?: NotifyDeps,
 ): Promise<void> => {
   const sends = Object.values(notifications)
-    .filter((ch) => ch.enabled)
-    .map((ch) => channelFromConfig(ch, deps))
+    .filter(ch => ch.enabled)
+    .map(ch => channelFromConfig(ch, deps))
     .filter((ch): ch is NotificationChannel => ch !== null)
-    .map((ch) => ch.send(payload).catch(() => {}));
+    .map(ch => ch.send(payload).catch(() => {}));
   await Promise.allSettled(sends);
 };
 
@@ -234,7 +238,12 @@ export const sendTestNotification = async (
 
 type MachineCtx = { machineId: string; machineLabel: string };
 
-export const alertPayload = (level: EventLevel, label: string, msg: string, machine?: MachineCtx): NotificationPayload => ({
+export const alertPayload = (
+  level: EventLevel,
+  label: string,
+  msg: string,
+  machine?: MachineCtx,
+): NotificationPayload => ({
   event: 'alert',
   title: `${EVENT_LEVEL_LABEL[level] ?? 'ALERT'}: ${label}`,
   body: msg,
@@ -266,7 +275,12 @@ export const downPayload = (label: string, agoMinutes: number, machine?: Machine
   machineLabel: machine?.machineLabel,
 });
 
-export const diskFillPayload = (label: string, currentPct: number, hoursLeft: number, machine?: MachineCtx): NotificationPayload => {
+export const diskFillPayload = (
+  label: string,
+  currentPct: number,
+  hoursLeft: number,
+  machine?: MachineCtx,
+): NotificationPayload => {
   const eta = hoursLeft < 1 ? `${Math.round(hoursLeft * 60)}m` : `${Math.round(hoursLeft)}h`;
   return {
     event: 'alert',

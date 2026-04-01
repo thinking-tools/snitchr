@@ -1,8 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { app } from '../../app';
 import {
-  createTestEnv, setupConfig, addMachine, getStoredConfig,
-  validHeartbeatPayload, validAlertPayload, json,
+  createTestEnv,
+  setupConfig,
+  addMachine,
+  getStoredConfig,
+  validHeartbeatPayload,
+  validAlertPayload,
+  json,
 } from '../helpers';
 import type { Bindings, MachineStatus, EventEntry } from '../../types';
 import { InMemoryKV } from '../../kv';
@@ -12,14 +17,18 @@ const MACHINE_ID = 'test-machine-001';
 const MACHINE_SECRET = 'a'.repeat(48);
 
 const ingest = (env: Bindings, payload: unknown, id = MACHINE_ID, secret = MACHINE_SECRET) =>
-  app.request(`/m/${id}/ingest`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${secret}`,
+  app.request(
+    `/m/${id}/ingest`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${secret}`,
+      },
+      body: JSON.stringify(payload),
     },
-    body: JSON.stringify(payload),
-  }, env);
+    env,
+  );
 
 describe('Ingest endpoint', () => {
   let env: Bindings;
@@ -43,11 +52,15 @@ describe('Ingest endpoint', () => {
     });
 
     it('rejects missing auth header', async () => {
-      const res = await app.request(`/m/${MACHINE_ID}/ingest`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(validHeartbeatPayload()),
-      }, env);
+      const res = await app.request(
+        `/m/${MACHINE_ID}/ingest`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(validHeartbeatPayload()),
+        },
+        env,
+      );
       expect(res.status).toBe(401);
     });
   });
