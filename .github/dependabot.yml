@@ -6,10 +6,12 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 10
-    labels:
-      - dependencies
     commit-message:
       prefix: 'chore(deps):'
+    groups:
+      all-npm:
+        patterns:
+          - '*'
 
   - package-ecosystem: github-actions
     directory: /
@@ -17,7 +19,9 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
-    labels:
-      - ci
     commit-message:
       prefix: 'chore(ci):'
+    groups:
+      all-actions:
+        patterns:
+          - '*'
