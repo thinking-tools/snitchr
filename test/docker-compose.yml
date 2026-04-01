@@ -1,0 +1,32 @@
+services:
+  gateway:
+    build:
+      context: ..
+      dockerfile: test/Dockerfile.gateway
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../static/scripts:/scripts:ro
+      - ./logs:/logs
+
+  debian:
+    build:
+      context: ..
+      dockerfile: test/Dockerfile.debian
+    privileged: true
+    depends_on:
+      - gateway
+    tmpfs:
+      - /run
+      - /tmp
+
+  ubuntu:
+    build:
+      context: ..
+      dockerfile: test/Dockerfile.ubuntu
+    privileged: true
+    depends_on:
+      - gateway
+    tmpfs:
+      - /run
+      - /tmp

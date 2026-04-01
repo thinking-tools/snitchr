@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Drop all permissions — this workflow needs none.
+permissions: {}
+
+# Cancel in-flight runs for the same branch/PR.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # No secrets, no env vars — tests use InMemoryKV / in-memory storage.
+    # Fork PRs trigger `pull_request` (not `pull_request_target`), so they
+    # never have access to repository secrets.
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests with coverage
+        run: npm run test:coverage
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            node -e "
+              const c = require('./coverage/coverage-summary.json').total;
+              const fmt = m => m.pct + '%';
+              console.log('| Metric      | Coverage |');
+              console.log('|-------------|----------|');
+              console.log('| Statements  | ' + fmt(c.statements) + ' |');
+              console.log('| Branches    | ' + fmt(c.branches) + ' |');
+              console.log('| Functions   | ' + fmt(c.functions) + ' |');
+              console.log('| Lines       | ' + fmt(c.lines) + ' |');
+            " >> "$GITHUB_STEP_SUMMARY"
+          fi

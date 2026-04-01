@@ -1,0 +1,908 @@
+<style>
+  /* globe */
+  .globe-section {
+    position: relative;
+    height: 35vh;
+    min-height: 340px;
+    max-height: 640px;
+    overflow: hidden;
+    background: var(--background);
+  }
+  #globe {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .globe-aura {
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 45vh;
+    height: 45vh;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(74, 158, 255, 0.06) 0%, rgba(74, 158, 255, 0.02) 40%, transparent 60%);
+    pointer-events: none;
+    animation: globe-aura-breathe 5s ease-in-out infinite;
+    z-index: 0;
+  }
+  @keyframes globe-aura-breathe {
+    0%,
+    100% {
+      opacity: 0.5;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.12);
+    }
+  }
+  .globe-fade {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(transparent, var(--background));
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* summary bar */
+  .summary-bar {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem 0.25rem;
+    font-size: var(--text-8);
+    margin-top: -80px;
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .summary-bar span {
+    color: var(--muted-foreground);
+  }
+
+  /* machine grid */
+  .machines-section {
+    position: relative;
+    z-index: 10;
+    padding: 0 1rem 1.5rem;
+    max-width: 1280px;
+    min-height: 50vh;
+    margin: 0 auto;
+  }
+
+  .machines-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 340px));
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  /* machine card */
+  .machine-card {
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+    cursor: pointer;
+  }
+  .machine-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+  .machine-card > * {
+    pointer-events: none;
+  }
+  .machine-card header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  .machine-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* metrics */
+  .metrics {
+    padding: 0.35rem 0 0.15rem;
+  }
+  .metric-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.2rem 0;
+  }
+  .metric-label {
+    width: 2.5rem;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+  .metric-row progress {
+    flex: 1;
+    height: 6px;
+  }
+  .metric-value {
+    width: 2.5rem;
+    text-align: right;
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+  }
+  .machine-card footer {
+    font-size: 0.72rem;
+    color: var(--muted-foreground);
+  }
+  .disk-fill-hint {
+    font-size: 0.62rem;
+    padding-left: 3rem;
+    margin: -0.05rem 0 0.15rem;
+    letter-spacing: 0.02em;
+  }
+  .disk-fill-hint.warning { color: var(--warning); }
+  .disk-fill-hint.critical { color: var(--danger); }
+
+  /* empty state */
+  #empty-state {
+    max-width: 500px;
+    margin: 3rem auto;
+    padding: 1rem;
+  }
+
+  /* curl/copy */
+  .curl-wrap {
+    position: relative;
+  }
+  .curl-wrap pre {
+    padding-right: 4.5rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .copy-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
+  /* globe label */
+  .globe-label {
+    position: absolute;
+    pointer-events: none;
+    z-index: 10;
+    background: rgba(19, 19, 23, 0.85);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-small);
+    padding: 0.3rem 0.55rem;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    transform: translate(-50%, -100%) translateY(-12px);
+  }
+  .globe-label.visible {
+    opacity: 1;
+  }
+  .globe-label strong {
+    display: block;
+    font-size: 0.75rem;
+  }
+  .globe-label small {
+    color: var(--muted-foreground);
+  }
+</style>
+
+<main>
+  <div id="loading">Loading&hellip;</div>
+
+  <div id="app" hidden>
+    <div role="alert" id="update-banner" class="hstack gap-2" hidden>
+      <span>snitchr <strong id="update-version"></strong> available</span>
+      <code id="update-hint" hidden></code>
+      <a id="update-link" target="_blank" rel="noopener">How to update</a>
+      <button class="ghost small" id="update-dismiss" aria-label="Dismiss">&times;</button>
+    </div>
+    <section class="globe-section">
+      <div class="globe-aura" aria-hidden="true"></div>
+      <canvas id="globe"></canvas>
+      <div class="globe-label" id="globe-label"><strong></strong><small></small></div>
+      <div class="globe-fade"></div>
+    </section>
+    <div class="summary-bar" id="summary">
+      <span></span>
+      <button class="outline small" id="add-machine-btn">+ Add machine</button>
+    </div>
+    <section class="machines-section">
+      <div class="machines-grid" id="machines-grid"></div>
+    </section>
+  </div>
+
+  <div id="empty-state" hidden>
+    <h2>Install your first snitchr agent</h2>
+    <p>
+      Run this on any Linux server to deploy the agent. Be careful &mdash;
+      <a href="/static/scripts/install.sh" target="_blank" rel="noopener" class="small">Review source</a>
+    </p>
+    <div class="curl-wrap">
+      <pre><code id="curl-cmd"></code></pre>
+      <button class="outline small copy-btn" id="copy-btn">Copy</button>
+    </div>
+  </div>
+
+  <dialog id="add-dialog">
+    <header><h3>Add a machine</h3></header>
+    <div>
+      <p>
+        Run this on any Linux server to install the snitchr agent.
+        <a href="/static/scripts/install.sh" target="_blank" rel="noopener" class="small">Review source</a>
+      </p>
+      <div class="curl-wrap">
+        <pre><code id="dialog-curl"></code></pre>
+        <button class="outline small copy-btn" id="dialog-copy">Copy</button>
+      </div>
+    </div>
+    <footer>
+      <button class="outline small" id="dialog-close">Close</button>
+    </footer>
+  </dialog>
+</main>
+
+<script type="module">
+  // ── Minimal TopoJSON → GeoJSON decoder ────────────────────────────
+  function decodeTopo(topology, obj) {
+    const { scale: sc, translate: tr } = topology.transform;
+    const decodeArc = idx => {
+      const rev = idx < 0;
+      const arc = topology.arcs[rev ? ~idx : idx];
+      const pts = [];
+      let x = 0,
+        y = 0;
+      for (const [dx, dy] of arc) {
+        x += dx;
+        y += dy;
+        pts.push([x * sc[0] + tr[0], y * sc[1] + tr[1]]);
+      }
+      return rev ? pts.reverse() : pts;
+    };
+    const ring = arcs => {
+      const pts = [];
+      for (const a of arcs) {
+        const d = decodeArc(a);
+        pts.push(...(pts.length ? d.slice(1) : d));
+      }
+      return pts;
+    };
+    const geo = g => {
+      if (g.type === 'Polygon') return { type: 'Polygon', coordinates: g.arcs.map(ring) };
+      if (g.type === 'MultiPolygon') return { type: 'MultiPolygon', coordinates: g.arcs.map(p => p.map(ring)) };
+      return g;
+    };
+    return obj.type === 'GeometryCollection'
+      ? { type: 'FeatureCollection', features: obj.geometries.map(g => ({ type: 'Feature', geometry: geo(g) })) }
+      : { type: 'Feature', geometry: geo(obj) };
+  }
+
+  // ── Sample land points from GeoJSON via canvas ────────────────────
+  function sampleLand(geojson, step = 2) {
+    const W = 360,
+      H = 180;
+    const cv = document.createElement('canvas');
+    cv.width = W;
+    cv.height = H;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#fff';
+    const px = ([lng, lat]) => [((lng + 180) / 360) * W, ((90 - lat) / 180) * H];
+    const fillRing = r => {
+      ctx.beginPath();
+      r.forEach((c, i) => {
+        const [x, y] = px(c);
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      });
+      ctx.closePath();
+      ctx.fill();
+    };
+    const proc = g => {
+      if (g.type === 'Polygon') g.coordinates.forEach(fillRing);
+      else if (g.type === 'MultiPolygon') g.coordinates.forEach(p => p.forEach(fillRing));
+    };
+    if (geojson.type === 'FeatureCollection') geojson.features.forEach(f => proc(f.geometry));
+    else if (geojson.type === 'Feature') proc(geojson.geometry);
+    const d = ctx.getImageData(0, 0, W, H).data;
+    const pts = [];
+    for (let y = 0; y < H; y += step)
+      for (let x = 0; x < W; x += step) if (d[(y * W + x) * 4] > 128) pts.push([90 - y, x - 180]);
+    return pts;
+  }
+
+  // ── Three.js globe ────────────────────────────────────────────────
+  async function initGlobe(canvas) {
+    const THREE = await import('/static/vendor/three.module.js');
+    const container = canvas.parentElement;
+    const rect = container.getBoundingClientRect();
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, rect.width / rect.height, 0.1, 100);
+    camera.position.set(0, 0.3, 2.45);
+    camera.lookAt(0, -0.1, 0);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setSize(rect.width, rect.height);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+    const globe = new THREE.Group();
+    globe.position.y = -0.25;
+    scene.add(globe);
+
+    let homeY = -0.8,
+      homeX = 0,
+      homeInit = false;
+
+    // sphere — matches --surface-lowest (#0e0e12) with a cool tint
+    globe.add(
+      new THREE.Mesh(
+        new THREE.SphereGeometry(1, 64, 64),
+        new THREE.MeshPhongMaterial({
+          color: 0x131317,
+          emissive: 0x08080e,
+          shininess: 3,
+          transparent: true,
+          opacity: 0.92,
+        }),
+      ),
+    );
+
+    // inner atmosphere — subtle blue rim glow matching --primary (#4a9eff)
+    const atmosMat = new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      transparent: true,
+      depthWrite: false,
+      uniforms: {
+        c: { value: 0.52 },
+        p: { value: 5.0 },
+        col: { value: new THREE.Color(0x6aafff) },
+        time: { value: 0 },
+      },
+      vertexShader: `varying vec3 vN; void main(){ vN=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+      fragmentShader: `uniform float c,p,time; uniform vec3 col; varying vec3 vN; void main(){ float i=pow(c-dot(vN,vec3(0,0,1)),p); float pulse=0.35+0.12*sin(time*0.6); gl_FragColor=vec4(col*i, i*pulse); }`,
+    });
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.12, 64, 64), atmosMat));
+
+    // outer halo — very subtle diffuse glow
+    scene.add(
+      new THREE.Mesh(
+        new THREE.SphereGeometry(1.25, 64, 64),
+        new THREE.ShaderMaterial({
+          side: THREE.BackSide,
+          blending: THREE.AdditiveBlending,
+          transparent: true,
+          depthWrite: false,
+          uniforms: { col: { value: new THREE.Color(0x1a2040) } },
+          vertexShader: `varying vec3 vN; void main(){ vN=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+          fragmentShader: `uniform vec3 col; varying vec3 vN; void main(){ float i=pow(0.35-dot(vN,vec3(0,0,1)),6.0); gl_FragColor=vec4(col*i, i*0.2); }`,
+        }),
+      ),
+    );
+
+    // lights — neutral ambient + cool key + subtle blue rim
+    scene.add(new THREE.AmbientLight(0x1a1a20, 0.7));
+    const dl1 = new THREE.DirectionalLight(0xe8eaed, 0.3);
+    dl1.position.set(2, 1.5, 3);
+    scene.add(dl1);
+    const dl2 = new THREE.DirectionalLight(0x1a1a2a, 0.35);
+    dl2.position.set(-3, -1, 1);
+    scene.add(dl2);
+    const dl3 = new THREE.DirectionalLight(0x4a9eff, 0.08);
+    dl3.position.set(0, -2, 0.5);
+    scene.add(dl3);
+
+    // land dots
+    try {
+      const topo = await fetch('/static/vendor/land-110m.json').then(r => r.json());
+      const land = decodeTopo(topo, topo.objects.land);
+      const pts = sampleLand(land, 2);
+      const dotGeo = new THREE.CircleGeometry(0.007, 5);
+      const dotMat = new THREE.MeshBasicMaterial({
+        color: 0x3a3a48,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.5,
+      });
+      const mesh = new THREE.InstancedMesh(dotGeo, dotMat, pts.length);
+      const dummy = new THREE.Object3D();
+      pts.forEach(([lat, lng], i) => {
+        const phi = THREE.MathUtils.degToRad(90 - lat);
+        const theta = THREE.MathUtils.degToRad(lng);
+        const pos = new THREE.Vector3().setFromSphericalCoords(1.002, phi, theta);
+        dummy.position.copy(pos);
+        dummy.lookAt(pos.clone().multiplyScalar(2));
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+      });
+      globe.add(mesh);
+    } catch (e) {
+      console.warn('World data failed:', e);
+    }
+
+    // ── Markers with clustering + heartbeat pulse animation ──
+    const markerGroup = new THREE.Group();
+    globe.add(markerGroup);
+    const pulses = [];
+    let clusters = [];
+    let lastPulse = 0;
+
+    const toSphere = (lat, lng, r) => {
+      const phi = THREE.MathUtils.degToRad(90 - lat);
+      const theta = THREE.MathUtils.degToRad(lng);
+      return new THREE.Vector3().setFromSphericalCoords(r, phi, theta);
+    };
+
+    const clusterBy = (machines, grid = 3) => {
+      const map = new Map();
+      for (const m of machines) {
+        const k = `${Math.round(m.lat / grid) * grid},${Math.round(m.lng / grid) * grid}`;
+        (map.get(k) || map.set(k, []).get(k)).push(m);
+      }
+      return [...map.values()].map(g => ({
+        lat: g.reduce((s, m) => s + m.lat, 0) / g.length,
+        lng: g.reduce((s, m) => s + m.lng, 0) / g.length,
+        count: g.length,
+        hasOnline: g.some(m => m.online),
+      }));
+    };
+
+    const disposeMesh = m => {
+      m.parent?.remove(m);
+      m.geometry?.dispose();
+      m.material?.dispose();
+    };
+
+    const setMachines = machines => {
+      while (markerGroup.children.length) disposeMesh(markerGroup.children[0]);
+      for (const p of pulses) disposeMesh(p.mesh);
+      pulses.length = 0;
+
+      clusters = clusterBy(machines);
+      for (const cl of clusters) {
+        const pos = toSphere(cl.lat, cl.lng, 1.015);
+        cl._pos = pos;
+        const on = cl.hasOnline;
+        const single = cl.count === 1;
+        const dotR = single ? 0.02 : 0.015 + Math.min(cl.count, 10) * 0.004;
+        const color = on ? 0x22c55e : 0x555555;
+
+        const dot = new THREE.Mesh(new THREE.SphereGeometry(dotR, 12, 12), new THREE.MeshBasicMaterial({ color }));
+        dot.position.copy(pos);
+        markerGroup.add(dot);
+
+        if (on) {
+          const glow = new THREE.Mesh(
+            new THREE.RingGeometry(dotR * 1.1, dotR * 1.8, 24),
+            new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3, side: THREE.DoubleSide }),
+          );
+          glow.position.copy(pos);
+          glow.lookAt(pos.clone().multiplyScalar(2));
+          markerGroup.add(glow);
+        }
+
+        if (!single) {
+          const rr = dotR * 2.5;
+          const ring = new THREE.Mesh(
+            new THREE.RingGeometry(rr * 0.8, rr, 32),
+            new THREE.MeshBasicMaterial({
+              color: on ? 0x22c55e : 0x444444,
+              transparent: true,
+              opacity: 0.12,
+              side: THREE.DoubleSide,
+            }),
+          );
+          ring.position.copy(pos);
+          ring.lookAt(pos.clone().multiplyScalar(2));
+          markerGroup.add(ring);
+        }
+      }
+    };
+
+    // heartbeat pulse — expanding rings from online clusters
+    const spawnPulse = (cl, t) => {
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.018, 0.024, 32),
+        new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.35, side: THREE.DoubleSide }),
+      );
+      ring.position.copy(cl._pos);
+      ring.lookAt(cl._pos.clone().multiplyScalar(2));
+      markerGroup.add(ring);
+      pulses.push({ mesh: ring, t0: t });
+    };
+
+    const tickPulses = t => {
+      if (t - lastPulse > 1.5 && clusters.length) {
+        for (const cl of clusters) if (cl.hasOnline) spawnPulse(cl, t);
+        lastPulse = t;
+      }
+      for (let i = pulses.length - 1; i >= 0; i--) {
+        const p = (t - pulses[i].t0) / 3;
+        if (p >= 1) {
+          disposeMesh(pulses[i].mesh);
+          pulses.splice(i, 1);
+          continue;
+        }
+        const s = 1 + p * 4;
+        pulses[i].mesh.scale.set(s, s, 1);
+        pulses[i].mesh.material.opacity = 0.35 * (1 - p) * (1 - p);
+      }
+    };
+
+    const setHome = (lat, lng) => {
+      homeY = -THREE.MathUtils.degToRad(lng);
+      homeX = THREE.MathUtils.degToRad(lat) * 0.3;
+      if (!homeInit) {
+        globe.rotation.y = homeY;
+        globe.rotation.x = homeX;
+        homeInit = true;
+      }
+    };
+
+    // focus / label
+    const labelEl = document.getElementById('globe-label');
+    const labelName = labelEl.querySelector('strong');
+    const labelLoc = labelEl.querySelector('small');
+    let targetY = null,
+      targetX = null,
+      focusPos = null;
+
+    const focusOn = (lat, lng, name, location) => {
+      targetY = -THREE.MathUtils.degToRad(lng);
+      targetX = THREE.MathUtils.degToRad(lat) * 0.3;
+      focusPos = toSphere(lat, lng, 1.06);
+      labelName.textContent = name;
+      labelLoc.textContent = location;
+      labelEl.classList.add('visible');
+    };
+
+    const clearFocus = () => {
+      targetY = targetX = focusPos = null;
+      labelEl.classList.remove('visible');
+    };
+
+    // drag-to-rotate
+    let dragging = false,
+      dragX = 0,
+      dragY = 0,
+      dragStartRY = 0,
+      dragStartRX = 0;
+    const onPointerDown = e => {
+      dragging = true;
+      dragX = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+      dragY = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
+      dragStartRY = globe.rotation.y;
+      dragStartRX = globe.rotation.x;
+      canvas.style.cursor = 'grabbing';
+    };
+    const onPointerMove = e => {
+      if (!dragging) return;
+      const cx = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+      const cy = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
+      const dx = cx - dragX,
+        dy = cy - dragY;
+      globe.rotation.y = dragStartRY + dx * 0.005;
+      globe.rotation.x = Math.max(-0.8, Math.min(0.8, dragStartRX + dy * 0.003));
+      homeY = globe.rotation.y;
+      homeX = globe.rotation.x;
+      targetY = targetX = null; // cancel any focus animation while dragging
+    };
+    const onPointerUp = () => {
+      dragging = false;
+      canvas.style.cursor = 'grab';
+    };
+    canvas.style.cursor = 'grab';
+    canvas.addEventListener('mousedown', onPointerDown);
+    canvas.addEventListener(
+      'touchstart',
+      e => {
+        e.preventDefault();
+        onPointerDown(e);
+      },
+      { passive: false },
+    );
+    window.addEventListener('mousemove', onPointerMove);
+    window.addEventListener('touchmove', onPointerMove);
+    window.addEventListener('mouseup', onPointerUp);
+    window.addEventListener('touchend', onPointerUp);
+
+    // resize
+    const onResize = () => {
+      const r = container.getBoundingClientRect();
+      camera.aspect = r.width / r.height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(r.width, r.height);
+    };
+    window.addEventListener('resize', onResize);
+
+    // animate
+    let raf;
+    const LERP = 0.04;
+    const shortAngle = (from, to) => {
+      let d = ((((to - from) % (Math.PI * 2)) + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+      return from + d;
+    };
+    const tick = () => {
+      raf = requestAnimationFrame(tick);
+      const t = performance.now() * 0.001;
+      atmosMat.uniforms.time.value = t;
+
+      if (!dragging) {
+        if (targetY !== null) {
+          globe.rotation.y += (shortAngle(globe.rotation.y, targetY) - globe.rotation.y) * LERP;
+          globe.rotation.x += (targetX - globe.rotation.x) * LERP;
+        } else {
+          globe.rotation.y += 0.0004;
+          globe.rotation.x += (homeX - globe.rotation.x) * LERP;
+        }
+      }
+
+      tickPulses(t);
+      renderer.render(scene, camera);
+
+      if (focusPos && labelEl.classList.contains('visible')) {
+        const wp = focusPos.clone();
+        globe.localToWorld(wp);
+        wp.project(camera);
+        const rect = container.getBoundingClientRect();
+        const x = (wp.x * 0.5 + 0.5) * rect.width;
+        const y = (-wp.y * 0.5 + 0.5) * rect.height;
+        if (wp.z > 1) labelEl.classList.remove('visible');
+        else {
+          labelEl.classList.add('visible');
+          labelEl.style.left = x + 'px';
+          labelEl.style.top = y + 'px';
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', () => {
+      document.hidden ? cancelAnimationFrame(raf) : tick();
+    });
+    tick();
+
+    return { setMachines, setHome, focusOn, clearFocus };
+  }
+
+  // ── UI helpers ────────────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+  const ago = ts => {
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 60) return `${s}s ago`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  };
+  const upStr = s => {
+    const d = Math.floor(s / 86400),
+      h = Math.floor((s % 86400) / 3600);
+    return d ? `${d}d ${h}h` : `${h}h`;
+  };
+
+  // ── Machine card ──────────────────────────────────────────────────
+  function machineCard(m) {
+    const el = document.createElement('article');
+    el.className = 'card machine-card';
+    el.dataset.id = m.id;
+    el._geo =
+      m.lat != null && m.lng != null
+        ? {
+            lat: m.lat,
+            lng: m.lng,
+            name: m.label || m.id.slice(0, 12),
+            loc: [m.city, m.country].filter(Boolean).join(', '),
+          }
+        : null;
+    const name = m.label || m.id.slice(0, 12);
+    const st = m.online ? 'online' : 'offline';
+    const hasMetrics = m.d && typeof m.d.cpu === 'number';
+    let metrics = '';
+    if (hasMetrics) {
+      const cpu = Math.round(m.d.cpu);
+      const mem = m.d.mem ? Math.round((m.d.mem[0] / m.d.mem[1]) * 100) : 0;
+      const disk = m.d.disk?.[0] ?? 0;
+      const dp = m.diskPrediction;
+      let fillHint = '';
+      if (dp?.trend === 'filling' && dp.hoursToThreshold != null && dp.hoursToThreshold <= 48) {
+        const t = dp.hoursToThreshold < 1 ? Math.round(dp.hoursToThreshold * 60) + 'm' : Math.round(dp.hoursToThreshold) + 'h';
+        fillHint = `<div class="disk-fill-hint ${dp.hoursToThreshold <= 12 ? 'critical' : 'warning'}" data-tip="Based on recent usage trend, disk is predicted to reach 90% in ~${t}">↗ ~${t} to 90%</div>`;
+      }
+      metrics = `<div class="metrics">
+        <div class="metric-row"><span class="metric-label">CPU</span><progress value="${cpu}" max="100"></progress><span class="metric-value">${cpu}%</span></div>
+        <div class="metric-row"><span class="metric-label">MEM</span><progress value="${mem}" max="100"></progress><span class="metric-value">${mem}%</span></div>
+        <div class="metric-row"><span class="metric-label">DISK</span><progress value="${disk}" max="100"></progress><span class="metric-value">${disk}%</span></div>
+        ${fillHint}
+      </div>`;
+    }
+    const alerts =
+      m.alertCount > 0 ? `<span class="badge ${m.alertCount >= 5 ? 'danger' : 'warning'}">${m.alertCount}</span>` : '';
+    el.innerHTML = `
+      <header>
+        <div class="machine-header">
+          <span class="status-dot ${st}"></span>
+          <strong>${name}</strong>
+          <span class="badge ${m.online ? 'success' : 'secondary'} small">${st}</span>
+        </div>
+        ${alerts}
+      </header>
+      ${metrics}
+      <footer class="hstack">
+        <small>${m.lastSeen ? ago(m.lastSeen) : m.d?.ts ? ago(m.d.ts * 1000) : 'never seen'}</small>
+        <small>${m.d?.up ? 'up ' + upStr(m.d.up) : ''}</small>
+      </footer>`;
+    return el;
+  }
+
+  // ── Boot ──────────────────────────────────────────────────────────
+  (async () => {
+    try {
+      const cfgRes = await fetch('/api/config');
+      if (!cfgRes.ok) return (location.href = '/');
+      const cfg = await cfgRes.json();
+
+      $('loading').remove();
+
+      // empty state
+      if (!cfg.machineIds?.length) {
+        const tokenRes = await fetch('/api/install-token', { method: 'POST' });
+        if (!tokenRes.ok) return;
+        const { token } = await tokenRes.json();
+        $('curl-cmd').textContent = `curl -sSL '${location.origin}/agent?init=${token}' | sudo bash`;
+        $('empty-state').hidden = false;
+        $('copy-btn').addEventListener('click', async e => {
+          await navigator.clipboard.writeText($('curl-cmd').textContent);
+          e.target.textContent = 'Copied!';
+          setTimeout(() => (e.target.textContent = 'Copy'), 2000);
+        });
+        // poll for first machine registration
+        const poll = setInterval(async () => {
+          const r = await fetch('/api/config')
+            .then(r => r.json())
+            .catch(() => null);
+          if (r?.machineIds?.length) {
+            clearInterval(poll);
+            location.reload();
+          }
+        }, 5000);
+        return;
+      }
+
+      $('app').hidden = false;
+
+      // init globe (non-blocking — dashboard works without it)
+      const globeP = initGlobe($('globe')).catch(e => {
+        console.warn('Globe unavailable:', e);
+        return null;
+      });
+
+      // render machines
+      const grid = $('machines-grid');
+      const summary = $('summary');
+      const render = async () => {
+        const res = await fetch('/api/machines');
+        if (!res.ok) return;
+        const { machines } = await res.json();
+        const on = machines.filter(m => m.online).length;
+        summary.querySelector('span').textContent =
+          `${machines.length} machine${machines.length !== 1 ? 's' : ''} · ${on} online`;
+        grid.replaceChildren(...machines.map(machineCard));
+        const g = await globeP;
+        if (g) {
+          const geo = machines.filter(m => m.lat != null && m.lng != null);
+          g.setMachines(geo);
+          if (geo.length) {
+            const avgLat = geo.reduce((s, m) => s + m.lat, 0) / geo.length;
+            // circular mean for longitude (handles ±180 wraparound)
+            const sinSum = geo.reduce((s, m) => s + Math.sin((m.lng * Math.PI) / 180), 0);
+            const cosSum = geo.reduce((s, m) => s + Math.cos((m.lng * Math.PI) / 180), 0);
+            const avgLng = (Math.atan2(sinSum, cosSum) * 180) / Math.PI;
+            g.setHome(avgLat, avgLng);
+          }
+        }
+      };
+      await render();
+      setInterval(render, 15_000);
+      window.addEventListener('snitchr:refresh', render);
+
+      // version check (non-blocking)
+      fetch('/api/version')
+        .then(r => (r.ok ? r.json() : null))
+        .then(ver => {
+          if (!ver) return;
+          if (!ver.updateAvailable || !ver.latest) return;
+          if (localStorage.getItem(`update-dismissed-${ver.latest}`)) return;
+          $('update-version').textContent = `v${ver.latest}`;
+          if (ver.runtime === 'node' || ver.runtime === 'bun') {
+            $('update-hint').textContent = 'npm update -g snitchr';
+            $('update-hint').hidden = false;
+          }
+          $('update-link').href = 'https://github.com/thinking-tools/snitchr#update';
+          $('update-banner').hidden = false;
+          $('update-dismiss').addEventListener('click', () => {
+            $('update-banner').hidden = true;
+            localStorage.setItem(`update-dismissed-${ver.latest}`, '1');
+          });
+        })
+        .catch(() => {});
+
+      // card click → detail view
+      grid.addEventListener('click', e => {
+        const card = e.target.closest('.machine-card');
+        if (card?.dataset.id) location.href = `/machine/${card.dataset.id}`;
+      });
+
+      // card hover → globe focus
+      globeP.then(globe => {
+        if (!globe) return;
+        grid.addEventListener(
+          'mouseenter',
+          e => {
+            const card = e.target.closest('.machine-card');
+            if (!card?._geo) return;
+            const { lat, lng, name, loc } = card._geo;
+            globe.focusOn(lat, lng, name, loc || 'Unknown');
+          },
+          true,
+        );
+        grid.addEventListener(
+          'mouseleave',
+          e => {
+            const card = e.target.closest('.machine-card');
+            if (card) globe.clearFocus();
+          },
+          true,
+        );
+      });
+    } catch (e) {
+      console.error('Dashboard boot failed:', e);
+      $('loading')?.remove();
+    }
+  })();
+
+  // ── Add machine dialog ────────────────────────────────────────────
+  const addDialog = $('add-dialog');
+  const openAddDialog = async () => {
+    const curlEl = $('dialog-curl');
+    curlEl.textContent = 'Generating token\u2026';
+    addDialog.showModal();
+    const res = await fetch('/api/install-token', { method: 'POST' });
+    if (!res.ok) {
+      curlEl.textContent = 'Failed to generate token';
+      return;
+    }
+    const { token } = await res.json();
+    curlEl.textContent = `curl -sSL '${location.origin}/agent?init=${token}' | sudo bash`;
+  };
+  $('add-machine-btn')?.addEventListener('click', openAddDialog);
+  $('dialog-close')?.addEventListener('click', () => addDialog.close());
+  $('dialog-copy')?.addEventListener('click', async e => {
+    await navigator.clipboard.writeText($('dialog-curl').textContent);
+    e.target.textContent = 'Copied!';
+    setTimeout(() => (e.target.textContent = 'Copy'), 2000);
+  });
+  addDialog?.addEventListener('click', e => {
+    if (e.target === addDialog) addDialog.close();
+  });
+  addDialog?.addEventListener('close', () => {
+    window.dispatchEvent(new CustomEvent('snitchr:refresh'));
+  });
+</script>

@@ -1,0 +1,124 @@
+<style>
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: black;
+    background-repeat: no-repeat;
+    background-position: right bottom;
+    background-size: auto;
+  }
+</style>
+
+<div style="width:100%;max-width:440px;padding:1rem">
+  <article class="card">
+    <h2>Welcome!</h2>
+    <p>Set up your password and storage to get started.</p>
+    <div role="alert" data-variant="danger" id="error" hidden></div>
+    <form id="form" class="vstack">
+      <label>Password
+        <input type="password" name="password" required minlength="8" placeholder="Min 8 characters" />
+      </label>
+      <label>Confirm Password
+        <input type="password" name="passwordConfirm" required placeholder="Re-enter password" />
+      </label>
+      <input type="hidden" name="storageMode" id="storageModeInput" value="s3" />
+      <div id="storage-mode" hidden>
+        <div class="flex items-center gap-4" style="flex-wrap:wrap">
+          <label id="opt-fs" hidden><input type="radio" name="_mode" value="filesystem" /> Local filesystem</label>
+          <label id="opt-r2" hidden><input type="radio" name="_mode" value="r2" /> Cloudflare R2</label>
+          <label><input type="radio" name="_mode" value="s3" /> Custom S3</label>
+        </div>
+      </div>
+      <div id="s3-fields" class="vstack">
+        <label>S3 Endpoint
+          <input type="url" name="s3Endpoint" required placeholder="https://s3.amazonaws.com" />
+        </label>
+        <label>Bucket
+          <input type="text" name="s3Bucket" required placeholder="my-bucket" />
+        </label>
+        <label>Region
+          <input type="text" name="s3Region" required placeholder="us-east-1" />
+        </label>
+        <label>Access Key
+          <input type="text" name="s3AccessKey" required placeholder="AKIA..." />
+        </label>
+        <label>Secret Key
+          <input type="password" name="s3SecretKey" required placeholder="Secret access key" />
+        </label>
+      </div>
+      <button type="submit" class="w-100">Save &amp; Continue</button>
+    </form>
+  </article>
+</div>
+
+<script>
+  const s3Fields = document.getElementById('s3-fields');
+  const s3Inputs = s3Fields.querySelectorAll('input');
+  const modeInput = document.getElementById('storageModeInput');
+
+  const setS3Visible = show => {
+    s3Fields.hidden = !show;
+    s3Inputs.forEach(i => (show ? i.setAttribute('required', '') : i.removeAttribute('required')));
+  };
+
+  (async () => {
+    try {
+      const caps = await fetch('/api/capabilities').then(r => r.json());
+      const hasOptions = caps.r2Available || caps.filesystemAvailable;
+      if (hasOptions) {
+        document.getElementById('storage-mode').hidden = false;
+        if (caps.filesystemAvailable) {
+          const opt = document.getElementById('opt-fs');
+          opt.hidden = false;
+          opt.querySelector('input').checked = true;
+          modeInput.value = 'filesystem';
+          setS3Visible(false);
+        }
+        if (caps.r2Available) {
+          const opt = document.getElementById('opt-r2');
+          opt.hidden = false;
+          if (!caps.filesystemAvailable) {
+            opt.querySelector('input').checked = true;
+            modeInput.value = 'r2';
+            setS3Visible(false);
+          }
+        }
+        document.querySelectorAll('[name="_mode"]').forEach(r => {
+          r.addEventListener('change', () => {
+            modeInput.value = r.value;
+            setS3Visible(r.value === 's3');
+          });
+        });
+      }
+    } catch {}
+  })();
+
+  document.getElementById('form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    const el = document.getElementById('error');
+    el.hidden = true;
+    btn.disabled = true;
+    btn.textContent = 'Testing storage...';
+    try {
+      const data = Object.fromEntries(new FormData(e.target));
+      delete data._mode;
+      const res = await fetch('/api/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (json.ok) return (location.href = '/');
+      el.textContent = json.error;
+      el.hidden = false;
+    } catch {
+      el.textContent = 'Request failed';
+      el.hidden = false;
+    }
+    btn.disabled = false;
+    btn.textContent = 'Save & Continue';
+  });
+</script>

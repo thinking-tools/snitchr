@@ -1,0 +1,113 @@
+{
+  "name": "snitchr",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Lightweight server monitoring — bash agent sends heartbeats and security events to a self-hosted dashboard on Cloudflare Workers, Node.js, or Bun",
+  "license": "MIT",
+  "author": "Jølly Good (https://github.com/thinking-tools)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thinking-tools/snitchr.git"
+  },
+  "homepage": "https://snitchr.sh",
+  "bugs": {
+    "url": "https://github.com/thinking-tools/snitchr/issues"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/thinking-tools"
+  },
+  "keywords": [
+    "server-monitoring",
+    "monitoring",
+    "heartbeat",
+    "security",
+    "alerting",
+    "cloudflare-workers",
+    "hono",
+    "bash-agent",
+    "self-hosted",
+    "linux"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "bin": {
+    "snitchr": "dist/cli.js"
+  },
+  "files": [
+    "dist/",
+    "static/",
+    "LICENSE",
+    "README.md"
+  ],
+  "cloudflare": {
+    "bindings": {
+      "SNITCHR_CONFIG": {
+        "description": "KV namespace for configuration and machine registry"
+      },
+      "SNITCHR_STORAGE": {
+        "description": "R2 bucket for heartbeats, events, and alert history. If you prefer S3, you can configure it in the setup wizard after deploy."
+      }
+    }
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "dev:remote": "wrangler dev --remote",
+    "dev:node": "tsx src/cli.ts",
+    "build:version": "node dev/build-version.mjs",
+    "deploy": "npm run build:version && wrangler deploy",
+    "prebuild:node": "rm -rf dist",
+    "build:node": "npm run build:version && tsc -p tsconfig.node.json",
+    "seed": "node dev/seed.mjs",
+    "seed:status": "node dev/seed-status.mjs",
+    "seed:collect": "node dev/collect.mjs",
+    "clear": "wrangler kv key delete --binding SNITCHR_CONFIG \"config\" --local",
+    "test:agent": "cd test && ./run.sh",
+    "test:agent:logs": "docker compose -f test/docker-compose.yml logs -f gateway",
+    "test:agent:down": "docker compose -f test/docker-compose.yml down",
+    "test:e2e": "VARIANT=all bash test/e2e/run.sh",
+    "test:e2e:bun": "VARIANT=bun bash test/e2e/run.sh",
+    "test:e2e:cf": "VARIANT=cf bash test/e2e/run.sh",
+    "test:e2e:down": "bash test/e2e/run.sh --down",
+    "sandbox": "bash dev/sandbox.sh",
+    "sandbox:wipe": "bash dev/sandbox.sh --wipe",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
+    "test": "vitest run",
+    "test:unit": "vitest run --dir src --exclude 'src/__tests__/**'",
+    "test:integration": "vitest run --dir src/__tests__/integration",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "copy:vendor": "node dev/copy-vendor.mjs",
+    "prepublishOnly": "npm run test && npm run build:node && npm run copy:vendor"
+  },
+  "dependencies": {
+    "@hono/node-server": "1.19.12",
+    "@noble/hashes": "2.0.1",
+    "hono": "4.12.9",
+    "s3mini": "0.9.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "4.20260331.1",
+    "@types/node": "25.5.0",
+    "@vitest/coverage-v8": "4.1.2",
+    "oat-glassed": "0.2.2",
+    "three": "0.183.2",
+    "tsx": "4.21.0",
+    "typescript": "6.0.2",
+    "vitest": "4.1.2",
+    "world-atlas": "2.0.2",
+    "wrangler": "4.79.0"
+  },
+  "prettier": {
+    "bracketSpacing": true,
+    "bracketSameLine": false,
+    "singleQuote": true,
+    "semi": true,
+    "endOfLine": "lf",
+    "tabWidth": 2,
+    "trailingComma": "all",
+    "arrowParens": "avoid",
+    "printWidth": 120
+  }
+}

@@ -1,0 +1,57 @@
+name: E2E
+
+on:
+  push:
+  pull_request:
+
+# No permissions needed — tests are fully local.
+permissions: {}
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: bun
+            storage: filesystem
+          - variant: cf
+            storage: r2
+
+    # No secrets — Bun uses filesystem, CF uses miniflare R2 emulation.
+    # Fork PRs use `pull_request` event → zero access to repo secrets.
+
+    env:
+      # Suppress wrangler telemetry prompt that blocks in non-interactive CI.
+      WRANGLER_SEND_METRICS: 'false'
+      CI: 'true'
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - if: matrix.variant == 'bun'
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+
+      - run: npm ci
+
+      - name: E2E tests (${{ matrix.variant }} / ${{ matrix.storage }})
+        run: VARIANT=${{ matrix.variant }} E2E_STORAGE_MODE=${{ matrix.storage }} bash test/e2e/run.sh
+
+      - name: Gateway log (on failure)
+        if: failure()
+        run: cat /tmp/e2e_gateway.log 2>/dev/null || echo "No gateway log found"
+
+      - name: Docker logs (on failure)
+        if: failure()
+        run: docker compose -f test/e2e/docker-compose.yml logs 2>/dev/null || true

@@ -1,0 +1,25 @@
+name = "snitchr"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./static"
+binding = "ASSETS"
+html_handling = "none"
+not_found_handling = "none"
+exclude = [".DS_Store"]
+
+[[kv_namespaces]]
+binding = "SNITCHR_CONFIG"
+id = "01ab40be59f6460e896be0f1c5a42d54"
+
+[[r2_buckets]]
+binding = "SNITCHR_STORAGE"
+bucket_name = "snitchr-storage"
+
+[vars]
+VAPID_CONTACT = ""  # Your email for Web Push VAPID identification (e.g. "you@example.com")
+
+[triggers]
+crons = ["*/5 * * * *"]

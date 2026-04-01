@@ -1,0 +1,11 @@
+services:
+  agent:
+    build:
+      context: ../..
+      dockerfile: test/Dockerfile.ubuntu
+    privileged: true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    tmpfs:
+      - /run
+      - /tmp

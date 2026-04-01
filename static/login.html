@@ -1,0 +1,44 @@
+<style>
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+</style>
+
+<div style="width:100%;max-width:380px;padding:1rem">
+  <article class="card">
+    <h2>snitchr</h2>
+    <p>Enter your password to continue.</p>
+    <div role="alert" data-variant="danger" id="error" hidden></div>
+    <form id="form" class="vstack">
+      <label>Password
+        <input type="password" name="password" required autofocus />
+      </label>
+      <button type="submit" class="w-100">Login</button>
+    </form>
+  </article>
+</div>
+
+<script>
+  document.getElementById('form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const el = document.getElementById('error');
+    try {
+      const data = Object.fromEntries(new FormData(e.target));
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (json.ok) return (location.href = '/');
+      el.textContent = json.error;
+      el.hidden = false;
+    } catch {
+      el.textContent = 'Network error — check your connection';
+      el.hidden = false;
+    }
+  });
+</script>

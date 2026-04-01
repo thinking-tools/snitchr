@@ -1,0 +1,624 @@
+<style>
+  /* detail layout override — wider than default */
+  .detail-wrap { max-width: 1100px; }
+
+  /* header */
+  .detail-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .detail-title h1 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: var(--font-semibold);
+    letter-spacing: -0.02em;
+  }
+  .edit-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    opacity: 0.25;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.1rem 0.25rem;
+    transition: opacity 0.15s;
+  }
+  .edit-btn:hover { opacity: 0.8; }
+  .status-dot { width: 10px; height: 10px; }
+  .detail-meta { margin-top: 0.35rem; }
+
+  /* stat cards */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .stat-card { padding: 0.75rem 1rem; }
+  .stat-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted-foreground);
+    margin-bottom: 0.1rem;
+  }
+  .stat-value {
+    font-size: 1.6rem;
+    font-weight: var(--font-semibold);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  .stat-card progress { width: 100%; height: 6px; margin-top: 0.35rem; }
+  .stat-sub {
+    font-size: 0.7rem;
+    color: var(--muted-foreground);
+    margin-top: 0.15rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-sub.disk-filling { color: var(--warning); }
+  .stat-sub.disk-critical { color: var(--danger); }
+
+  /* snapshot tables */
+  .snap-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  @media (max-width: 800px) { .snap-grid { grid-template-columns: 1fr; } }
+  .snap-card { padding: 0.75rem 1rem; }
+  .snap-card h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted-foreground);
+  }
+  .snap-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+  }
+  .snap-table th {
+    text-align: left;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--faint-foreground);
+    padding: 0.2rem 0.4rem;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .snap-table td {
+    padding: 0.25rem 0.4rem;
+    color: var(--muted-foreground);
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+  }
+  .snap-table tr.is-new td { color: var(--warning); }
+  .snap-table tr.is-new td::before { content: ''; }
+  .snap-new-badge {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: var(--warning);
+    margin-left: 0.3rem;
+    vertical-align: super;
+  }
+  .snap-empty {
+    color: var(--faint-foreground);
+    font-size: 0.75rem;
+    padding: 0.5rem 0.4rem;
+  }
+  .mc-tag-list { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .mc-tag {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    background: var(--surface-high);
+    border: 1px solid var(--glass-border);
+  }
+
+  /* alerts */
+  .alerts-section { margin-bottom: 1.25rem; }
+  .alert-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.45rem 0.75rem;
+    font-size: var(--text-8);
+    border-bottom: 1px solid var(--border);
+  }
+  .alert-row:last-child { border-bottom: none; }
+  .level {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    width: 3.2rem;
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+  }
+  .level-1 { color: #38bdf8; }
+  .level-2 { color: var(--warning); }
+  .level-3 { color: var(--danger); }
+  .level-4 { color: #ef4444; text-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
+  .level-5 { color: #a855f7; }
+  .alert-time {
+    width: 4.5rem;
+    color: var(--faint-foreground);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+    font-size: 0.72rem;
+  }
+  .alert-type {
+    width: 7rem;
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    flex-shrink: 0;
+  }
+  .alert-msg { color: var(--muted-foreground); word-break: break-word; }
+
+  /* events */
+  .events-section { margin-bottom: 1.25rem; }
+  .events-controls { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .events-controls input[type=date],
+  .events-controls input[type=search] { font-size: var(--text-8); padding: 0.3rem 0.5rem; }
+  .events-controls input[type=search] { min-width: 180px; }
+  .event-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  }
+  .event-row:last-child { border-bottom: none; }
+  .event-time { width: 5.5rem; color: var(--faint-foreground); flex-shrink: 0; }
+  .event-type {
+    width: 7.5rem;
+    color: var(--muted-foreground);
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .event-msg { color: var(--muted-foreground); word-break: break-word; }
+
+  /* machine settings */
+  .settings-section {
+    margin-top: var(--space-6);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--border);
+  }
+  .setting-row > label { width: 5.5rem; }
+  .setting-row code {
+    font-size: 0.72rem;
+    word-break: break-all;
+    flex: 1;
+    color: var(--muted-foreground);
+  }
+</style>
+
+<main>
+    <div id="loading">Loading&hellip;</div>
+
+    <div id="app" class="detail-wrap" hidden>
+      <a href="/" class="back-link">&larr; Dashboard</a>
+
+      <div class="detail-header">
+        <div class="detail-title">
+          <span class="status-dot" id="status-dot"></span>
+          <h1 id="machine-name"></h1>
+          <button class="edit-btn" id="edit-name-btn" title="Rename">&#9998;</button>
+          <span class="badge" id="status-badge"></span>
+        </div>
+        <div class="detail-meta" id="machine-meta"></div>
+      </div>
+
+      <div class="stat-grid" id="stat-grid"></div>
+      <div class="snap-grid" id="snap-grid"></div>
+
+      <section class="alerts-section">
+        <div class="section-head">
+          <h2>Alerts <span id="alert-count"></span></h2>
+          <button class="outline small" id="clear-alerts-btn" hidden>Clear all</button>
+        </div>
+        <div class="card" id="alerts-list"></div>
+      </section>
+
+      <section class="events-section">
+        <div class="section-head">
+          <h2>Events</h2>
+          <div class="events-controls">
+            <input type="date" id="event-date" />
+            <input type="search" placeholder="Search events..." id="event-search" />
+          </div>
+        </div>
+        <div class="card" id="events-list"></div>
+        <button class="outline small mt-2" id="load-more-btn" hidden>Load more</button>
+      </section>
+
+      <section class="settings-section">
+        <div class="section-head"><h2>Settings</h2></div>
+        <div class="setting-row">
+          <label>Machine ID</label>
+          <code id="mid-display"></code>
+          <button class="outline small" id="copy-id-btn">Copy</button>
+        </div>
+        <div class="setting-row">
+          <label>Uninstall</label>
+          <code id="uninstall-cmd">systemctl disable snitchr-agent --now &amp;&amp; rm /usr/local/bin/snitchr-agent &amp;&amp; rm -rf /etc/snitchr</code>
+          <button class="outline small" id="copy-uninstall-btn">Copy</button>
+        </div>
+        <div class="danger-zone">
+          <h3>Danger zone</h3>
+          <p>Permanently remove this machine and all its stored data (status, events, alerts).</p>
+          <button data-variant="danger" class="small" id="delete-btn">Delete this machine</button>
+        </div>
+      </section>
+    </div>
+
+    <div id="not-found" class="detail-wrap" hidden>
+      <h2>Machine not found</h2>
+      <p>This machine may have been removed.</p>
+      <a href="/">&larr; Back to dashboard</a>
+    </div>
+  </main>
+
+<dialog id="rename-dialog">
+  <header><h3>Rename machine</h3></header>
+  <div>
+    <input type="text" id="rename-input" placeholder="Label (e.g. web-prod-1)" />
+  </div>
+  <footer>
+    <button class="outline small" id="rename-cancel">Cancel</button>
+    <button class="small" id="rename-save">Save</button>
+  </footer>
+</dialog>
+
+<dialog id="delete-dialog">
+  <header><h3>Delete machine?</h3></header>
+  <div><p id="delete-msg"></p></div>
+  <footer>
+    <button class="outline small" id="delete-cancel">Cancel</button>
+    <button data-variant="danger" class="small" id="delete-confirm">Delete permanently</button>
+  </footer>
+</dialog>
+
+<script type="module">
+  const $ = id => document.getElementById(id);
+  const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+  // EventLevel: 0=HEARTBEAT 1=INFO 2=WARN 3=ERROR 4=CRITICAL 5=SHUTDOWN
+  const LEVELS = { 1: 'INFO', 2: 'WARN', 3: 'ERROR', 4: 'CRIT', 5: 'DOWN' };
+
+  const ago = ts => {
+    if (!ts) return 'never';
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 60) return `${s}s ago`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  };
+
+  const upStr = s => {
+    if (!s) return '0s';
+    const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+    return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
+  };
+
+  const fmtBytes = b => {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+    if (b < 1073741824) return (b / 1048576).toFixed(1) + ' MB';
+    return (b / 1073741824).toFixed(2) + ' GB';
+  };
+
+  const fmtTime = ts => new Date(ts).toLocaleTimeString('en-GB', { hour12: false });
+  const fmtDate = ts => new Date(ts).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
+
+  const api = async (path, opts) => {
+    const res = await fetch(path, opts);
+    if (res.status === 401) { location.href = '/'; return null; }
+    if (!res.ok) return null;
+    return res.json();
+  };
+
+  const machineId = location.pathname.match(/^\/machine\/(.+)$/)?.[1];
+
+  if (!machineId) {
+    $('loading').remove();
+    $('not-found').hidden = false;
+  } else {
+    boot();
+  }
+
+  async function boot() {
+    const data = await api(`/api/machines/${machineId}`);
+    if (!data || data.error) {
+      $('loading').remove();
+      $('not-found').hidden = false;
+      return;
+    }
+
+    $('loading').remove();
+    $('app').hidden = false;
+
+    let cur = data;
+
+    // ── Render ──
+    const render = d => {
+      cur = d;
+      const name = d.label || d.id.slice(0, 12);
+      const dd = d.d || {};
+      const online = d.online;
+
+      document.title = `${name} — snitchr`;
+      $('machine-name').textContent = name;
+      $('status-dot').className = `status-dot ${online ? 'online' : 'offline'}`;
+      $('status-badge').textContent = online ? 'ONLINE' : 'OFFLINE';
+      $('status-badge').className = `badge ${online ? 'success' : 'secondary'} small`;
+      $('mid-display').textContent = d.id;
+
+      const meta = [];
+      if (d.city || d.country) meta.push(esc([d.city, d.country].filter(Boolean).join(', ')));
+      meta.push(`Registered ${fmtDate(d.registeredAt)}`);
+      const seenTs = d.lastSeen || (dd.ts ? dd.ts * 1000 : 0);
+      if (seenTs) meta.push(`Last seen ${ago(seenTs)}`);
+      $('machine-meta').innerHTML = meta.join(' &middot; ');
+
+      // stats
+      const stats = [];
+      if (typeof dd.cpu === 'number')
+        stats.push({ l: 'CPU', v: `${dd.cpu.toFixed(1)}%`, p: Math.round(dd.cpu) });
+      if (dd.mem) {
+        const pct = Math.round((dd.mem[0] / dd.mem[1]) * 100);
+        stats.push({ l: 'Memory', v: `${pct}%`, p: pct, s: `${dd.mem[0]} / ${dd.mem[1]} MB` });
+      }
+      if (dd.disk?.length) {
+        const dp = d.diskPrediction;
+        let diskSub = '', diskCls = '', diskTip = '';
+        if (dp?.trend === 'filling' && dp.hoursToThreshold != null && dp.hoursToThreshold <= 2160) {
+          const t = dp.hoursToThreshold < 1 ? `${Math.round(dp.hoursToThreshold * 60)}m`
+            : dp.hoursToThreshold <= 48 ? `${Math.round(dp.hoursToThreshold)}h`
+            : `${Math.round(dp.hoursToThreshold / 24)}d`;
+          diskSub = `↗ ~${t} to 90%`;
+          diskCls = dp.hoursToThreshold <= 12 ? 'disk-critical' : dp.hoursToThreshold <= 48 ? 'disk-filling' : '';
+          diskTip = `Based on recent usage trend, disk is predicted to reach 90% in ~${t}`;
+        } else if (dp?.trend === 'filling' && dp.hoursToThreshold != null) {
+          const days = Math.round(dp.hoursToThreshold / 24);
+          const v = days > 365 ? `${Math.round(days / 365)}y+` : `~${days}d`;
+          diskSub = `→ stable (${v})`;
+          diskTip = `Disk is slowly filling — predicted to reach 90% in ~${days} days`;
+        } else if (dp?.trend === 'shrinking') {
+          diskSub = '↘ freeing up';
+          diskTip = 'Disk usage is trending down';
+        } else if (dp) {
+          diskSub = '→ stable';
+          diskTip = 'Disk velocity is flat — no fill trend detected';
+        }
+        stats.push({ l: 'Disk', v: `${dd.disk[0]}%`, p: dd.disk[0], s: diskSub || undefined, sc: diskCls, st: diskTip });
+      }
+      if (dd.load)
+        stats.push({ l: 'Load', v: dd.load[0]?.toFixed(2), s: `5m ${dd.load[1]?.toFixed(2)}  15m ${dd.load[2]?.toFixed(2)}` });
+      if (dd.net)
+        stats.push({ l: 'Network', v: `\u2193 ${fmtBytes(dd.net[0])}`, s: `\u2191 ${fmtBytes(dd.net[1])}` });
+      if (typeof dd.up === 'number')
+        stats.push({ l: 'Uptime', v: upStr(dd.up), s: dd.procs ? `${dd.procs} processes` : '' });
+
+      $('stat-grid').innerHTML = stats.map(s => `
+        <div class="card stat-card">
+          <div class="stat-label">${s.l}</div>
+          <div class="stat-value">${esc(String(s.v))}</div>
+          ${s.p != null ? `<progress value="${s.p}" max="100"></progress>` : ''}
+          ${s.s ? `<div class="stat-sub ${s.sc || ''}"${s.st ? ` data-tip="${s.st}"` : ''}>${esc(s.s)}</div>` : ''}
+        </div>`).join('');
+
+      // snapshot tables
+      const alerts = d.alerts || [];
+      const newProcs = new Set(alerts.filter(a => a.d?.type === 'new_process').map(a => {
+        const m = a.d?.msg?.match(/: (.+?) \(user:/); return m ? m[1] : '';
+      }).filter(Boolean));
+      const newPorts = new Set(alerts.filter(a => a.d?.type === 'new_port').map(a => {
+        const m = a.d?.msg?.match(/:(\d+)/); return m ? m[1] : '';
+      }).filter(Boolean));
+      const newMounts = new Set(alerts.filter(a => a.d?.type === 'mount_change' && a.d?.msg?.startsWith('New')).map(a => {
+        const m = a.d?.msg?.match(/on (.+?) \(/); return m ? m[1] : '';
+      }).filter(Boolean));
+
+      const cards = [];
+
+      // ports table
+      if (dd.portList?.length || dd.ports) {
+        const rows = dd.portList
+          ? dd.portList.map(p => `<tr class="${newPorts.has(String(p.port)) ? 'is-new' : ''}">
+              <td>${p.port}${newPorts.has(String(p.port)) ? '<span class="snap-new-badge">NEW</span>' : ''}</td>
+              <td>${esc(p.addr)}</td><td>${esc(p.proc)}</td></tr>`).join('')
+          : dd.ports.split(',').filter(Boolean).map(p => `<tr class="${newPorts.has(p) ? 'is-new' : ''}">
+              <td>${esc(p)}${newPorts.has(p) ? '<span class="snap-new-badge">NEW</span>' : ''}</td>
+              <td>-</td><td>-</td></tr>`).join('');
+        cards.push(`<div class="card snap-card"><h3>Listening Ports</h3>
+          <table class="snap-table"><thead><tr><th>Port</th><th>Bind</th><th>Process</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="3" class="snap-empty">None</td></tr>'}</tbody></table></div>`);
+      }
+
+      // processes table
+      if (dd.procList) {
+        const procs = dd.procList.split('|').filter(Boolean);
+        const rows = procs.map(p => `<tr class="${newProcs.has(p) ? 'is-new' : ''}">
+          <td>${esc(p)}${newProcs.has(p) ? '<span class="snap-new-badge">NEW</span>' : ''}</td></tr>`).join('');
+        cards.push(`<div class="card snap-card"><h3>Processes (${procs.length})</h3>
+          <table class="snap-table"><thead><tr><th>Name</th></tr></thead>
+          <tbody>${rows}</tbody></table></div>`);
+      }
+
+      // mounts table
+      if (dd.mountList?.length) {
+        const rows = dd.mountList.map(m => `<tr class="${newMounts.has(m.target) ? 'is-new' : ''}">
+          <td>${esc(m.src)}${newMounts.has(m.target) ? '<span class="snap-new-badge">NEW</span>' : ''}</td>
+          <td>${esc(m.target)}</td><td>${esc(m.fs)}</td></tr>`).join('');
+        cards.push(`<div class="card snap-card"><h3>Mounts</h3>
+          <table class="snap-table"><thead><tr><th>Source</th><th>Target</th><th>FS</th></tr></thead>
+          <tbody>${rows}</tbody></table></div>`);
+      }
+
+      // tty sessions table
+      if (dd.ttyList?.length) {
+        const rows = dd.ttyList.map(t => `<tr>
+          <td>${esc(t.user)}</td><td>${esc(t.tty)}</td>
+          <td>${esc(t.from || '-')}</td><td>${esc(t.login)}</td></tr>`).join('');
+        cards.push(`<div class="card snap-card"><h3>TTY Sessions</h3>
+          <table class="snap-table"><thead><tr><th>User</th><th>TTY</th><th>From</th><th>Login</th></tr></thead>
+          <tbody>${rows}</tbody></table></div>`);
+      } else if (dd.users) {
+        const items = dd.users.split(',').filter(Boolean);
+        if (items.length) {
+          cards.push(`<div class="card snap-card"><h3>Active Users</h3>
+            <div class="mc-tag-list">${items.map(x => `<span class="mc-tag">${esc(x)}</span>`).join('')}</div></div>`);
+        }
+      }
+
+      $('snap-grid').innerHTML = cards.join('');
+
+      renderAlerts(d.alerts || []);
+    };
+
+    // ── Alerts ──
+    let alertsClearedAt = 0;
+
+    const renderAlerts = alerts => {
+      const filtered = alertsClearedAt ? alerts.filter(a => a.ts > alertsClearedAt) : alerts;
+      $('alert-count').textContent = filtered.length ? `(${filtered.length})` : '';
+      $('clear-alerts-btn').hidden = !filtered.length;
+      if (!filtered.length) {
+        $('alerts-list').innerHTML = '<div class="empty-hint">No alerts</div>';
+        return;
+      }
+      $('alerts-list').innerHTML = filtered.map(a => `
+        <div class="alert-row">
+          <span class="level level-${a.t}">${LEVELS[a.t] || 'LVL' + a.t}</span>
+          <span class="alert-time">${ago(a.ts)}</span>
+          <span class="alert-type">${esc(a.d?.type || '')}</span>
+          <span class="alert-msg">${esc(a.d?.msg || '')}</span>
+        </div>`).join('');
+    };
+
+    $('clear-alerts-btn').addEventListener('click', async () => {
+      if (!(await api(`/api/machines/${machineId}/alerts`, { method: 'DELETE' }))?.ok) return;
+      alertsClearedAt = Date.now();
+      renderAlerts([]);
+    });
+
+    // ── Events ──
+    const dateInput = $('event-date');
+    const searchInput = $('event-search');
+    const evList = $('events-list');
+    const moreBtn = $('load-more-btn');
+    let evDate = new Date().toISOString().slice(0, 10);
+    let evCursor = null;
+    let evAll = [];
+
+    dateInput.value = evDate;
+
+    const loadEvents = async (reset = true) => {
+      if (reset) { evAll = []; evCursor = null; }
+      const p = new URLSearchParams({ date: evDate, limit: '50' });
+      if (evCursor) p.set('cursor', evCursor);
+      const res = await api(`/api/machines/${machineId}/events?${p}`);
+      if (!res) return;
+      // dedup by timestamp (miniflare cursor pagination workaround)
+      const seen = new Set(evAll.map(e => e.ts));
+      const fresh = res.events.filter(e => !seen.has(e.ts));
+      evAll.push(...fresh);
+      evCursor = res.truncated ? res.cursor : null;
+      moreBtn.hidden = !res.truncated || !fresh.length;
+      renderEvents();
+    };
+
+    const renderEvents = () => {
+      const q = searchInput.value.toLowerCase();
+      const list = q ? evAll.filter(e => JSON.stringify(e.d || {}).toLowerCase().includes(q)) : evAll;
+      if (!list.length) {
+        evList.innerHTML = `<div class="empty-hint">No events${q ? ' matching search' : ' for this date'}</div>`;
+        return;
+      }
+      evList.innerHTML = list.map(e => `
+        <div class="event-row">
+          <span class="event-time">${fmtTime(e.ts)}</span>
+          <span class="level level-${e.t}">${LEVELS[e.t] || '?'}</span>
+          <span class="event-type">${esc(e.d?.type || '')}</span>
+          <span class="event-msg">${esc(e.d?.msg || '')}</span>
+        </div>`).join('');
+    };
+
+    dateInput.addEventListener('change', () => { evDate = dateInput.value; loadEvents(); });
+    let searchTimer;
+    searchInput.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(renderEvents, 150); });
+    moreBtn.addEventListener('click', () => loadEvents(false));
+
+    // ── Initial load ──
+    render(data);
+    await loadEvents();
+    setInterval(async () => {
+      const fresh = await api(`/api/machines/${machineId}`);
+      if (fresh && !fresh.error) render(fresh);
+    }, 15_000);
+
+    // ── Rename ──
+    const rnDialog = $('rename-dialog');
+    const rnInput = $('rename-input');
+    $('edit-name-btn').addEventListener('click', () => {
+      rnInput.value = cur.label || '';
+      rnDialog.showModal();
+      rnInput.focus();
+    });
+    $('rename-cancel').addEventListener('click', () => rnDialog.close());
+    const doRename = async () => {
+      const label = rnInput.value.trim();
+      const res = await api(`/api/machines/${machineId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label }),
+      });
+      if (res?.ok) { rnDialog.close(); cur.label = label || undefined; render(cur); }
+    };
+    $('rename-save').addEventListener('click', doRename);
+    rnInput.addEventListener('keydown', e => { if (e.key === 'Enter') doRename(); });
+    rnDialog.addEventListener('click', e => { if (e.target === rnDialog) rnDialog.close(); });
+
+    // ── Delete ──
+    const delDialog = $('delete-dialog');
+    $('delete-btn').addEventListener('click', () => {
+      const name = esc(cur.label || cur.id.slice(0, 12));
+      $('delete-msg').innerHTML = `This will permanently remove <strong>${name}</strong> and all its stored data. This cannot be undone.`;
+      delDialog.showModal();
+    });
+    $('delete-cancel').addEventListener('click', () => delDialog.close());
+    $('delete-confirm').addEventListener('click', async () => {
+      if ((await api(`/api/machines/${machineId}`, { method: 'DELETE' }))?.ok) location.href = '/';
+    });
+    delDialog.addEventListener('click', e => { if (e.target === delDialog) delDialog.close(); });
+
+    // ── Copy helpers ──
+    const copyTo = (btnId, fn) => {
+      $(btnId)?.addEventListener('click', async e => {
+        await navigator.clipboard.writeText(fn());
+        e.target.textContent = 'Copied!';
+        setTimeout(() => (e.target.textContent = 'Copy'), 2000);
+      });
+    };
+    copyTo('copy-id-btn', () => cur.id);
+    copyTo('copy-uninstall-btn', () => $('uninstall-cmd').textContent);
+  }
+
+</script>

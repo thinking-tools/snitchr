@@ -1,0 +1,744 @@
+<style>
+  /* channel sections */
+  .channel + .channel {
+    border-top: 1px solid var(--border);
+    padding-top: var(--space-3);
+  }
+  .channel label {
+    margin: 0;
+  }
+  .channel .collapsible {
+    display: none;
+  }
+  .channel .collapsible.open {
+    display: block;
+  }
+  .channel menu.buttons {
+    margin: 0;
+  }
+
+  /* feature rows */
+  .feature-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 0;
+  }
+  .feature-row + .feature-row {
+    border-top: 1px solid var(--border);
+  }
+  .feature-name {
+    font-size: 0.82rem;
+    font-weight: var(--font-medium);
+  }
+  .feature-desc {
+    font-size: 0.72rem;
+    color: var(--faint-foreground);
+    margin-top: 0.1rem;
+  }
+  .feature-row > label {
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  /* info rows */
+  .info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0;
+    font-size: 0.82rem;
+  }
+  .info-row + .info-row {
+    border-top: 1px solid var(--border);
+  }
+  .info-label {
+    color: var(--muted-foreground);
+  }
+
+  /* password form */
+  .pw-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .pw-fields label {
+    font-size: var(--text-8);
+    margin-bottom: 0;
+  }
+
+  /* timeout display */
+  .timeout-human {
+    font-size: 0.75rem;
+    color: var(--faint-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+</style>
+
+<main>
+    <div id="loading">Loading&hellip;</div>
+
+    <div id="app" class="detail-wrap" hidden>
+      <div class="detail-header">
+        <h1>Settings</h1>
+        <div class="detail-meta">Configure monitoring, notifications, and security</div>
+      </div>
+
+      <!-- ── Notifications ── -->
+      <section>
+        <div class="section-head"><h2>Notifications</h2></div>
+        <div class="card" style="padding: 0.5rem 1rem" id="channels-card">
+          <div class="channel vstack gap-2" data-channel="ntfy">
+            <div>
+              <strong>ntfy</strong> <span class="badge success small" data-channel-badge="ntfy" hidden>Enabled</span>
+              <div class="text-lighter" style="font-size: var(--text-8)">
+                Push notifications via <a href="https://ntfy.sh" target="_blank" rel="noopener">ntfy.sh</a>
+              </div>
+            </div>
+            <input type="url" id="ntfy-endpoint" placeholder="https://ntfy.sh/your-topic" />
+            <div class="hstack">
+              <button class="outline small" type="button" data-channel-enable-btn="ntfy" disabled>
+                Test &amp; Enable
+              </button>
+              <menu class="buttons" data-channel-active="ntfy" hidden>
+                <button class="outline small" type="button" data-channel-test-btn="ntfy">Test</button>
+                <button class="outline small" type="button" data-channel-disable-btn="ntfy">Disable</button>
+              </menu>
+            </div>
+          </div>
+
+          <div class="channel vstack gap-2" data-channel="webhook">
+            <div>
+              <strong>Webhook</strong>
+              <span class="badge success small" data-channel-badge="webhook" hidden>Enabled</span>
+              <div class="text-lighter" style="font-size: var(--text-8)">
+                HTTP POST with JSON payload, optional HMAC-SHA256 signing
+              </div>
+            </div>
+            <input type="url" id="webhook-url" placeholder="https://example.com/webhook" />
+            <div data-field>
+              <label style="font-size: var(--text-8)"
+                >Signing secret <small class="text-lighter">(optional)</small></label
+              >
+              <input type="text" id="webhook-secret" placeholder="Leave empty to skip signing" />
+            </div>
+            <div class="hstack">
+              <button class="outline small" type="button" data-channel-enable-btn="webhook" disabled>
+                Test &amp; Enable
+              </button>
+              <menu class="buttons" data-channel-active="webhook" hidden>
+                <button class="outline small" type="button" data-channel-test-btn="webhook">Test</button>
+                <button class="outline small" type="button" data-channel-disable-btn="webhook">Disable</button>
+              </menu>
+            </div>
+          </div>
+
+          <div class="channel vstack gap-2" data-channel="slack">
+            <div>
+              <strong>Slack</strong> <span class="badge success small" data-channel-badge="slack" hidden>Enabled</span>
+              <div class="text-lighter" style="font-size: var(--text-8)">
+                Incoming webhook from
+                <a href="https://api.slack.com/messaging/webhooks" target="_blank" rel="noopener">Slack</a>, color-coded
+                by severity
+              </div>
+            </div>
+            <input type="url" id="slack-webhook" placeholder="https://hooks.slack.com/services/..." />
+            <div class="hstack">
+              <button class="outline small" type="button" data-channel-enable-btn="slack" disabled>
+                Test &amp; Enable
+              </button>
+              <menu class="buttons" data-channel-active="slack" hidden>
+                <button class="outline small" type="button" data-channel-test-btn="slack">Test</button>
+                <button class="outline small" type="button" data-channel-disable-btn="slack">Disable</button>
+              </menu>
+            </div>
+          </div>
+
+          <div class="channel" data-channel="webpush">
+            <div class="hstack justify-between" style="padding: 0.2rem 0">
+              <div>
+                <strong>Browser notifications</strong>
+                <span class="badge success small" data-channel-badge="webpush" hidden>Enabled</span>
+                <div class="text-lighter" style="font-size: var(--text-8)">
+                  OS-level push via Web Push API, works when browser is closed
+                </div>
+              </div>
+              <label><input type="checkbox" role="switch" data-channel-enable="webpush" /></label>
+            </div>
+            <div class="collapsible" data-channel-body="webpush">
+              <div id="push-status" class="text-lighter" style="font-size: var(--text-8); margin: 0.5rem 0"></div>
+              <button
+                class="outline small"
+                type="button"
+                data-channel-test-btn="webpush"
+                style="display: none"
+                id="push-test-btn"
+              >
+                Test
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Monitoring ── -->
+      <section>
+        <div class="section-head">
+          <h2>Monitoring</h2>
+        </div>
+        <div class="card" style="padding: 0.85rem 1rem">
+          <div class="setting-row">
+            <label for="alert-threshold">Threshold</label>
+            <select id="alert-threshold">
+              <option value="1">INFO &mdash; all events</option>
+              <option value="2">WARN &mdash; warnings and above</option>
+              <option value="3">ERROR &mdash; errors and critical only</option>
+              <option value="4">CRITICAL &mdash; critical events only</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label for="hb-timeout">Timeout</label>
+            <input type="number" id="hb-timeout" min="30" max="3600" step="10" />
+            <span class="timeout-human" id="hb-human"></span>
+          </div>
+        </div>
+        <div class="save-row">
+          <button class="small" id="save-btn">Save changes</button>
+        </div>
+      </section>
+
+      <!-- ── Agent Features ── -->
+      <section>
+        <div class="section-head"><h2>Agent Features</h2></div>
+        <div class="card" style="padding: 0.5rem 1rem" id="features-card">
+          <div class="feature-row">
+            <div>
+              <div class="feature-name"><span class="badge danger small">ERROR</span> File integrity</div>
+              <div class="feature-desc">/etc/passwd, sshd_config, crontabs, authorized_keys</div>
+            </div>
+            <label><input type="checkbox" role="switch" data-feature="fileIntegrity" /></label>
+          </div>
+          <div class="feature-row">
+            <div>
+              <div class="feature-name"><span class="badge warning small">WARN</span> Auth monitoring</div>
+              <div class="feature-desc">SSH logins, sudo events, authentication failures</div>
+            </div>
+            <label><input type="checkbox" role="switch" data-feature="authWatch" /></label>
+          </div>
+          <div class="feature-row">
+            <div>
+              <div class="feature-name"><span class="badge warning small">WARN</span> Process detection</div>
+              <div class="feature-desc">New processes appearing vs captured baseline</div>
+            </div>
+            <label><input type="checkbox" role="switch" data-feature="processWatch" /></label>
+          </div>
+          <div class="feature-row">
+            <div>
+              <div class="feature-name"><span class="badge warning small">WARN</span> Port detection</div>
+              <div class="feature-desc">New listening ports appearing vs captured baseline</div>
+            </div>
+            <label><input type="checkbox" role="switch" data-feature="portWatch" /></label>
+          </div>
+          <div class="feature-row">
+            <div>
+              <div class="feature-name"><span class="badge warning small">WARN</span> Mount detection</div>
+              <div class="feature-desc">New filesystems mounted or existing ones removed vs baseline</div>
+            </div>
+            <label><input type="checkbox" role="switch" data-feature="mountWatch" /></label>
+          </div>
+          <div class="feature-row">
+            <div>
+              <div class="feature-name"><span class="badge warning small">WARN</span> CPU spike alerts</div>
+              <div class="feature-desc">Alert when CPU usage exceeds 90%</div>
+            </div>
+            <label><input type="checkbox" role="switch" data-feature="cpuAlerts" /></label>
+          </div>
+          <div class="feature-row">
+            <div>
+              <div class="feature-name"><span class="badge warning small">WARN</span> Memory spike alerts</div>
+              <div class="feature-desc">Alert when memory usage exceeds 90%</div>
+            </div>
+            <label><input type="checkbox" role="switch" data-feature="memAlerts" /></label>
+          </div>
+          <div class="feature-row">
+            <div>
+              <div class="feature-name"><span class="badge warning small">WARN</span> Disk space alerts</div>
+              <div class="feature-desc">Alert when disk usage exceeds 90%</div>
+            </div>
+            <label><input type="checkbox" role="switch" data-feature="diskAlerts" /></label>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Security ── -->
+      <section>
+        <div class="section-head"><h2>Security</h2></div>
+        <div class="card" style="padding: 1rem">
+          <div class="pw-fields">
+            <label
+              >Current password
+              <input type="password" id="cur-pw" autocomplete="current-password" />
+            </label>
+            <label
+              >New password
+              <input
+                type="password"
+                id="new-pw"
+                minlength="8"
+                autocomplete="new-password"
+                placeholder="Min 8 characters"
+              />
+            </label>
+            <label
+              >Confirm new password
+              <input type="password" id="cfm-pw" autocomplete="new-password" />
+            </label>
+          </div>
+          <div class="save-row">
+            <button class="outline small" type="button" id="pw-btn">Change password</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── System ── -->
+      <section>
+        <div class="section-head"><h2>System</h2></div>
+        <div class="card" style="padding: 0.65rem 1rem">
+          <div class="info-row">
+            <span class="info-label">Storage</span>
+            <span class="badge secondary small" id="s-storage"></span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Machines</span>
+            <span id="s-machines"></span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Version</span>
+            <span>v0.1.0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Danger zone ── -->
+      <div class="danger-zone">
+        <h3>Danger zone</h3>
+        <p>Permanently delete all machines, events, and configuration. This cannot be undone.</p>
+        <button data-variant="danger" class="small" type="button" id="reset-btn">Factory reset</button>
+      </div>
+    </div>
+  </main>
+
+<dialog id="reset-dialog">
+  <header><h3>Factory reset</h3></header>
+  <div>
+    <p>
+      All machines, events, alerts, and configuration will be permanently deleted. You will need to set up snitchr
+      again.
+    </p>
+    <label
+      >Enter your password to confirm
+      <input type="password" id="reset-pw" />
+    </label>
+    <div role="alert" data-variant="danger" id="reset-err" hidden></div>
+  </div>
+  <footer>
+    <button class="outline small" type="button" id="reset-cancel">Cancel</button>
+    <button data-variant="danger" class="small" type="button" id="reset-go">Reset everything</button>
+  </footer>
+</dialog>
+
+<script type="module">
+  const $ = id => document.getElementById(id);
+  const toast = (msg, variant = 'success') => window.ot?.toast?.(msg, null, { variant, duration: 3000 });
+
+  const api = async (path, opts) => {
+    try {
+      const res = await fetch(path, opts);
+      if (res.status === 401) {
+        location.href = '/';
+        return null;
+      }
+      return await res.json();
+    } catch {
+      return null;
+    }
+  };
+
+  const post = (url, body) =>
+    api(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+  const patch = (url, body) =>
+    api(url, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+  const fmtTimeout = s => {
+    if (s >= 3600) {
+      const h = Math.floor(s / 3600),
+        m = Math.floor((s % 3600) / 60);
+      return m ? `${h}h ${m}m` : `${h}h`;
+    }
+    if (s >= 60) {
+      const m = Math.floor(s / 60),
+        r = s % 60;
+      return r ? `${m}m ${r}s` : `${m}m`;
+    }
+    return `${s}s`;
+  };
+
+  (async () => {
+    const cfg = await api('/api/settings');
+    if (!cfg || cfg.error) return;
+
+    $('loading').remove();
+    $('app').hidden = false;
+
+    // ── Populate fields ──
+    $('ntfy-endpoint').value = cfg.notifications?.ntfy?.endpoint ?? '';
+    $('webhook-url').value = cfg.notifications?.webhook?.url ?? '';
+    $('webhook-secret').value = cfg.notifications?.webhook?.secret ?? '';
+    $('slack-webhook').value = cfg.notifications?.slack?.webhookUrl ?? '';
+
+    $('alert-threshold').value = String(cfg.alertThreshold);
+    $('hb-timeout').value = String(cfg.heartbeatTimeout);
+    $('s-storage').textContent = cfg.storageMode.toUpperCase();
+    $('s-machines').textContent = `${cfg.machineCount} registered`;
+
+    const updateTimeout = () => {
+      $('hb-human').textContent = fmtTimeout(Number($('hb-timeout').value) || 0);
+    };
+    updateTimeout();
+    $('hb-timeout').addEventListener('input', updateTimeout);
+
+    // populate feature switches
+    const switches = document.querySelectorAll('[data-feature]');
+    switches.forEach(sw => {
+      sw.checked = cfg.agentFeatures[sw.dataset.feature] !== false;
+    });
+
+    // ── Channel enabled state ──
+    const enabled = {
+      ntfy: cfg.notifications?.ntfy?.enabled === true,
+      webhook: cfg.notifications?.webhook?.enabled === true,
+      slack: cfg.notifications?.slack?.enabled === true,
+    };
+
+    const channelInput = { ntfy: 'ntfy-endpoint', webhook: 'webhook-url', slack: 'slack-webhook' };
+
+    const updateChannelUI = name => {
+      const badge = document.querySelector(`[data-channel-badge="${name}"]`);
+      const enableBtn = document.querySelector(`[data-channel-enable-btn="${name}"]`);
+      const activeMenu = document.querySelector(`[data-channel-active="${name}"]`);
+      if (badge) badge.hidden = !enabled[name];
+      if (enableBtn) enableBtn.hidden = enabled[name];
+      if (activeMenu) activeMenu.hidden = !enabled[name];
+    };
+
+    const updateEnableBtns = () => {
+      for (const [name, inputId] of Object.entries(channelInput)) {
+        const btn = document.querySelector(`[data-channel-enable-btn="${name}"]`);
+        if (btn) btn.disabled = !$(inputId).value.trim();
+      }
+    };
+
+    ['ntfy', 'webhook', 'slack'].forEach(updateChannelUI);
+    updateEnableBtns();
+    Object.values(channelInput).forEach(id => $(id).addEventListener('input', updateEnableBtns));
+
+    // ── Build notifications object from UI ──
+    const buildNotifications = () => {
+      const n = { ...cfg.notifications };
+      const ep = $('ntfy-endpoint').value.trim();
+      if (ep) n.ntfy = { type: 'ntfy', endpoint: ep, enabled: enabled.ntfy };
+      else delete n.ntfy;
+
+      const whUrl = $('webhook-url').value.trim();
+      if (whUrl) {
+        const secret = $('webhook-secret').value.trim() || undefined;
+        n.webhook = { type: 'webhook', url: whUrl, secret, enabled: enabled.webhook };
+      } else delete n.webhook;
+
+      const slackUrl = $('slack-webhook').value.trim();
+      if (slackUrl) n.slack = { type: 'slack', webhookUrl: slackUrl, enabled: enabled.slack };
+      else delete n.slack;
+
+      delete n.webpush;
+
+      return n;
+    };
+
+    // ── Test & Enable / Test / Disable handlers ──
+    const testAndSave = async (name, setEnabled) => {
+      enabled[name] = setEnabled;
+      const notifications = buildNotifications();
+      await patch('/api/settings', { notifications });
+      const d = await post('/api/settings/test-notification', { channel: name });
+      if (!d || !d.ok) {
+        if (setEnabled) {
+          enabled[name] = false;
+          await patch('/api/settings', { notifications: buildNotifications() });
+        }
+        toast(d?.error || 'Test failed', 'danger');
+        updateChannelUI(name);
+        return false;
+      }
+      toast(setEnabled ? 'Enabled' : 'Test sent');
+      updateChannelUI(name);
+      return true;
+    };
+
+    document.querySelectorAll('[data-channel-enable-btn]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const name = btn.dataset.channelEnableBtn;
+        btn.disabled = true;
+        btn.textContent = 'Testing\u2026';
+        await testAndSave(name, true);
+        btn.textContent = 'Test & Enable';
+        btn.disabled = false;
+      });
+    });
+
+    document.querySelectorAll('[data-channel-test-btn]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const name = btn.dataset.channelTestBtn;
+        if (name === 'webpush') {
+          btn.disabled = true;
+          btn.textContent = 'Sending\u2026';
+          const notifications = buildNotifications();
+          await patch('/api/settings', { notifications });
+          const d = await post('/api/settings/test-notification', { channel: 'webpush' });
+          if (!d) toast('Request failed', 'danger');
+          else toast(d.ok ? 'Test sent' : d.error || 'Failed', d.ok ? 'success' : 'danger');
+          btn.textContent = 'Test';
+          btn.disabled = false;
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = 'Sending\u2026';
+        await testAndSave(name, true);
+        btn.textContent = 'Test';
+        btn.disabled = false;
+      });
+    });
+
+    document.querySelectorAll('[data-channel-disable-btn]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const name = btn.dataset.channelDisableBtn;
+        enabled[name] = false;
+        await patch('/api/settings', { notifications: buildNotifications() });
+        updateChannelUI(name);
+        toast(`${name} disabled`);
+      });
+    });
+
+    // ── Web Push setup ──
+    const pushStatus = $('push-status');
+    const pushTestBtn = $('push-test-btn');
+    const pushSwitch = document.querySelector('[data-channel-enable="webpush"]');
+    const pushBadge = document.querySelector('[data-channel-badge="webpush"]');
+    let pushBusy = false;
+
+    const syncPushBody = () => {
+      const body = document.querySelector('[data-channel-body="webpush"]');
+      if (body) body.classList.toggle('open', pushSwitch.checked);
+    };
+    pushSwitch.addEventListener('change', syncPushBody);
+
+    const urlBase64ToUint8Array = base64String => {
+      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const raw = atob(base64);
+      const arr = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+      return arr;
+    };
+
+    const updatePushUI = state => {
+      pushSwitch.checked = state === 'subscribed';
+      pushSwitch.disabled = state === 'denied' || state === 'unsupported';
+      pushBadge.hidden = state !== 'subscribed';
+      if (state === 'subscribed') {
+        pushStatus.textContent = 'Enabled in this browser.';
+        pushTestBtn.style.display = '';
+        pushTestBtn.disabled = false;
+      } else if (state === 'denied') {
+        pushStatus.textContent = 'Blocked by browser. Check your browser settings.';
+        pushTestBtn.style.display = 'none';
+      } else if (state === 'unsupported') {
+        pushStatus.textContent = 'Not supported in this browser.';
+        pushTestBtn.style.display = 'none';
+      } else {
+        pushStatus.textContent = 'Not enabled in this browser.';
+        pushTestBtn.style.display = 'none';
+      }
+      syncPushBody();
+    };
+
+    let pushSubscription = null;
+
+    const initPush = async () => {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        updatePushUI('unsupported');
+        return;
+      }
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        pushSubscription = await reg.pushManager.getSubscription();
+        updatePushUI(pushSubscription ? 'subscribed' : Notification.permission === 'denied' ? 'denied' : 'idle');
+      } catch {
+        updatePushUI('unsupported');
+      }
+    };
+
+    const subscribePush = async () => {
+      try {
+        const keyData = await api('/api/push/vapid-key');
+        if (!keyData?.publicKey) {
+          toast('Failed to get VAPID key', 'danger');
+          return false;
+        }
+        const reg = await navigator.serviceWorker.ready;
+        pushSubscription = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(keyData.publicKey),
+        });
+        const subJson = pushSubscription.toJSON();
+        const d = await post('/api/push/subscribe', { endpoint: subJson.endpoint, keys: subJson.keys });
+        if (d?.ok) {
+          toast('Browser notifications enabled');
+          return true;
+        }
+        toast(d?.error || 'Subscription failed', 'danger');
+        return false;
+      } catch {
+        if (Notification.permission === 'denied') {
+          updatePushUI('denied');
+          return false;
+        }
+        toast('Failed to enable notifications', 'danger');
+        return false;
+      }
+    };
+
+    const unsubscribePush = async () => {
+      if (!pushSubscription) return;
+      const ep = pushSubscription.endpoint;
+      await pushSubscription.unsubscribe();
+      pushSubscription = null;
+      await post('/api/push/unsubscribe', { endpoint: ep });
+      toast('Browser notifications disabled');
+    };
+
+    pushSwitch.addEventListener('change', async () => {
+      if (pushBusy) return;
+      pushBusy = true;
+      if (pushSwitch.checked) {
+        const ok = await subscribePush();
+        updatePushUI(ok ? 'subscribed' : Notification.permission === 'denied' ? 'denied' : 'idle');
+      } else {
+        await unsubscribePush();
+        updatePushUI('idle');
+      }
+      pushBusy = false;
+    });
+
+    initPush();
+
+    // ── Save general settings ──
+    $('save-btn').addEventListener('click', async () => {
+      const btn = $('save-btn');
+      btn.disabled = true;
+      btn.textContent = 'Saving\u2026';
+      const d = await patch('/api/settings', {
+        alertThreshold: Number($('alert-threshold').value),
+        heartbeatTimeout: Number($('hb-timeout').value),
+        notifications: buildNotifications(),
+      });
+      if (!d) toast('Request failed', 'danger');
+      else toast(d.ok ? 'Settings saved' : d.error || 'Save failed', d.ok ? 'success' : 'danger');
+      btn.disabled = false;
+      btn.textContent = 'Save changes';
+    });
+
+    // ── Feature toggle (auto-save) ──
+    switches.forEach(sw => {
+      sw.addEventListener('change', async () => {
+        const features = {};
+        switches.forEach(s => {
+          features[s.dataset.feature] = s.checked;
+        });
+        const d = await patch('/api/settings', { agentFeatures: features });
+        if (!d || !d.ok) {
+          sw.checked = !sw.checked;
+          toast(d?.error || 'Failed to update', 'danger');
+        }
+      });
+    });
+
+    // ── Change password ──
+    $('pw-btn').addEventListener('click', async () => {
+      const cur = $('cur-pw').value,
+        np = $('new-pw').value,
+        cf = $('cfm-pw').value;
+      if (!cur) return toast('Enter current password', 'warning');
+      if (!np || np.length < 8) return toast('New password must be 8+ characters', 'warning');
+      if (np !== cf) return toast('Passwords do not match', 'warning');
+
+      const btn = $('pw-btn');
+      btn.disabled = true;
+      btn.textContent = 'Changing\u2026';
+      const d = await post('/api/settings/password', { currentPassword: cur, newPassword: np, confirmPassword: cf });
+      if (!d) {
+        toast('Request failed', 'danger');
+      } else if (d.ok) {
+        toast('Password changed');
+        $('cur-pw').value = $('new-pw').value = $('cfm-pw').value = '';
+      } else {
+        toast(d.error || 'Failed', 'danger');
+      }
+      btn.disabled = false;
+      btn.textContent = 'Change password';
+    });
+
+    // ── Factory reset ──
+    const rd = $('reset-dialog');
+    $('reset-btn').addEventListener('click', () => {
+      $('reset-pw').value = '';
+      $('reset-err').hidden = true;
+      rd.showModal();
+    });
+    $('reset-cancel').addEventListener('click', () => rd.close());
+    rd.addEventListener('click', e => {
+      if (e.target === rd) rd.close();
+    });
+
+    $('reset-go').addEventListener('click', async () => {
+      const pw = $('reset-pw').value;
+      if (!pw) {
+        $('reset-err').textContent = 'Password required';
+        $('reset-err').hidden = false;
+        return;
+      }
+      const btn = $('reset-go');
+      btn.disabled = true;
+      btn.textContent = 'Resetting\u2026';
+      const d = await post('/api/settings/reset', { password: pw });
+      if (d?.ok) {
+        location.href = '/';
+        return;
+      }
+      $('reset-err').textContent = d?.error || 'Request failed';
+      $('reset-err').hidden = false;
+      btn.disabled = false;
+      btn.textContent = 'Reset everything';
+    });
+  })();
+
+</script>
