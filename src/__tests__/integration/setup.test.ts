@@ -78,6 +78,39 @@ describe('Setup wizard', () => {
     expect(res.status).toBe(400);
   });
 
+  it('rejects R2 mode without R2 binding', async () => {
+    const res = await app.request(
+      '/api/setup',
+      jsonPost({ password: 'testpassword123', passwordConfirm: 'testpassword123', storageMode: 'r2' }),
+      env,
+    );
+    expect(res.status).toBe(400);
+    const body = await json(res);
+    expect(body.error).toContain('R2 binding');
+  });
+
+  it('rejects filesystem mode without DATA_DIR', async () => {
+    const res = await app.request(
+      '/api/setup',
+      jsonPost({ password: 'testpassword123', passwordConfirm: 'testpassword123', storageMode: 'filesystem' }),
+      env,
+    );
+    expect(res.status).toBe(400);
+    const body = await json(res);
+    expect(body.error).toContain('Filesystem');
+  });
+
+  it('rejects S3 mode with missing fields', async () => {
+    const res = await app.request(
+      '/api/setup',
+      jsonPost({ password: 'testpassword123', passwordConfirm: 'testpassword123', storageMode: 's3', s3Endpoint: 'https://s3.example.com' }),
+      env,
+    );
+    expect(res.status).toBe(400);
+    const body = await json(res);
+    expect(body.error).toContain('S3 fields');
+  });
+
   it('rejects setup when already configured', async () => {
     await app.request(
       '/api/setup',

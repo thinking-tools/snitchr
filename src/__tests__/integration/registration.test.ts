@@ -39,6 +39,24 @@ describe('Machine registration', () => {
       expect(config.pendingToken).toBe(token.replace('-', ''));
     });
 
+    it('returns existing pending token on second call', async () => {
+      const res1 = await app.request(
+        '/api/install-token',
+        { method: 'POST', headers: { Cookie: `session=${session}` } },
+        env,
+      );
+      const { token: token1 } = await json(res1);
+
+      const res2 = await app.request(
+        '/api/install-token',
+        { method: 'POST', headers: { Cookie: `session=${session}` } },
+        env,
+      );
+      const { token: token2 } = await json(res2);
+
+      expect(token2).toBe(token1);
+    });
+
     it('rejects without auth', async () => {
       const res = await app.request('/api/install-token', { method: 'POST' }, env);
       expect(res.status).toBe(401);

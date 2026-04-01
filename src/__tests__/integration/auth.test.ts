@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { app } from '../../app';
-import { createTestEnv, setupConfig, jsonPost, TEST_PASSWORD, json } from '../helpers';
+import { createTestEnv, setupConfig, getSessionCookie, addMachine, jsonPost, TEST_PASSWORD, json } from '../helpers';
 import type { Bindings } from '../../types';
 import { InMemoryKV } from '../../kv';
 
@@ -75,6 +75,19 @@ describe('Authentication', () => {
     it('GET /api/settings returns 401', async () => {
       const res = await app.request('/api/settings', {}, env);
       expect(res.status).toBe(401);
+    });
+  });
+
+  describe('GET /api/config', () => {
+    it('returns machine IDs and settings when authed', async () => {
+      await addMachine(kv, 'machine-1', 'a'.repeat(48));
+      const session = await getSessionCookie(env);
+      const res = await app.request('/api/config', { headers: { Cookie: `session=${session}` } }, env);
+      expect(res.status).toBe(200);
+      const body = await json(res);
+      expect(body.machineIds).toContain('machine-1');
+      expect(body.alertThreshold).toBe(2);
+      expect(body.storageMode).toBe('memory');
     });
   });
 });
