@@ -17,6 +17,23 @@ fail() { ((FAIL_COUNT++)); echo -e "  ${R_C}✗${RST} $1"; }
 
 scenario() { echo -e "\n${B}▸ $1${RST}"; }
 
+# Fetch JSON from gateway and extract a field via node (no curl|node pipe).
+# Usage: gateway_count <url_path>
+#   Fetches the URL, parses JSON, prints .count
+# Usage: gateway_eval <url_path> <js_expression>
+#   Fetches the URL, passes body to node via argv for custom extraction
+gateway_count() {
+  local body
+  body=$(curl -sf "$1" 2>/dev/null) || { echo 0; return; }
+  node -e "console.log(JSON.parse(process.argv[1]).count)" "$body" 2>/dev/null || echo 0
+}
+
+gateway_eval() {
+  local body
+  body=$(curl -sf "$1" 2>/dev/null) || { echo 0; return; }
+  node -e "$2" "$body" 2>/dev/null || echo 0
+}
+
 # Wait for events matching a filter to appear at the gateway.
 # Usage: wait_for_event <query_params> <min_count> <timeout_sec> <description>
 # Example: wait_for_event "t=0" 1 90 "heartbeat received"
@@ -25,10 +42,7 @@ wait_for_event() {
   local elapsed=0
   while (( elapsed < timeout )); do
     local count
-    count=$(curl -sf "${GATEWAY_URL}/api/test/events?${query}" | node -e "
-      let d='';process.stdin.on('data',c=>d+=c);
-      process.stdin.on('end',()=>console.log(JSON.parse(d).count));
-    " 2>/dev/null || echo 0)
+    count=$(gateway_count "${GATEWAY_URL}/api/test/events?${query}")
     if (( count >= min )); then
       pass "${desc} (${count} events, ${elapsed}s)"
       return 0
@@ -49,10 +63,7 @@ wait_for_any_event() {
   while (( elapsed < timeout )); do
     for query in "${queries[@]}"; do
       local count
-      count=$(curl -sf "${GATEWAY_URL}/api/test/events?${query}" | node -e "
-        let d='';process.stdin.on('data',c=>d+=c);
-        process.stdin.on('end',()=>console.log(JSON.parse(d).count));
-      " 2>/dev/null || echo 0)
+      count=$(gateway_count "${GATEWAY_URL}/api/test/events?${query}")
       if (( count >= 1 )); then
         pass "${desc} (${count} events, ${elapsed}s)"
         return 0
@@ -70,10 +81,7 @@ wait_for_any_event() {
 assert_count() {
   local query="$1" min="$2" max="$3" desc="$4"
   local count
-  count=$(curl -sf "${GATEWAY_URL}/api/test/events?${query}" | node -e "
-    let d='';process.stdin.on('data',c=>d+=c);
-    process.stdin.on('end',()=>console.log(JSON.parse(d).count));
-  " 2>/dev/null || echo 0)
+  count=$(gateway_count "${GATEWAY_URL}/api/test/events?${query}")
   if (( count >= min && count <= max )); then
     pass "${desc} (count=${count})"
   else
@@ -85,13 +93,8 @@ assert_count() {
 assert_registered() {
   local desc="$1"
   local count
-  count=$(curl -sf "${GATEWAY_URL}/api/test/events" | node -e "
-    let d='';process.stdin.on('data',c=>d+=c);
-    process.stdin.on('end',()=>{
-      const data=JSON.parse(d);
-      console.log(data.events.filter(e=>e.path==='/register').length);
-    });
-  " 2>/dev/null || echo 0)
+  count=$(gateway_eval "${GATEWAY_URL}/api/test/events" \
+    "const d=JSON.parse(process.argv[1]);console.log(d.events.filter(e=>e.path==='/register').length)")
   if (( count >= 1 )); then
     pass "${desc} (${count} registrations)"
   else
