@@ -14,10 +14,12 @@
 </p>
 
 <p align="center">
+ 
   <a href="https://www.npmjs.com/package/snitchr"><img src="https://img.shields.io/npm/v/snitchr?color=cb0000&label=npm" alt="npm version" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" /></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-strict-blue" alt="TypeScript strict" /></a>
   <a href="https://github.com/thinking-tools/snitchr/wiki"><img src="https://img.shields.io/badge/docs-wiki-blueviolet" alt="Wiki" /></a>
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen" alt="Contributions welcome" /></a>
   <br>
   <a href="https://sonarcloud.io/summary/new_code?id=thinking-tools_snitchr"><img src="https://sonarcloud.io/api/project_badges/measure?project=thinking-tools_snitchr&metric=alert_status" alt="Quality Gate Status" /></a>
   <a href="https://sonarcloud.io/summary/new_code?id=thinking-tools_snitchr"><img src="https://sonarcloud.io/api/project_badges/measure?project=thinking-tools_snitchr&metric=reliability_rating" alt="Reliability Rating" /></a>
@@ -26,6 +28,8 @@
   <a href="https://sonarcloud.io/summary/new_code?id=thinking-tools_snitchr"><img src="https://sonarcloud.io/api/project_badges/measure?project=thinking-tools_snitchr&metric=coverage" alt="Coverage" /></a>
   <a href="https://sonarcloud.io/summary/new_code?id=thinking-tools_snitchr"><img src="https://sonarcloud.io/api/project_badges/measure?project=thinking-tools_snitchr&metric=bugs" alt="Bugs" /></a>
   <a href="https://sonarcloud.io/summary/new_code?id=thinking-tools_snitchr"><img src="https://sonarcloud.io/api/project_badges/measure?project=thinking-tools_snitchr&metric=vulnerabilities" alt="Vulnerabilities" /></a>
+   <a href="https://github.com/thinking-tools/snitchr/actions/workflows/ci.yml"><img src="https://github.com/thinking-tools/snitchr/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/thinking-tools/snitchr/actions/workflows/codeql.yml"><img src="https://github.com/thinking-tools/snitchr/actions/workflows/codeql.yml/badge.svg" alt="CodeQL" /></a>
   <a href="https://securityscorecards.dev/viewer/?uri=github.com/thinking-tools/snitchr"><img src="https://api.securityscorecards.dev/projects/github.com/thinking-tools/snitchr/badge" alt="OpenSSF Scorecard" /></a>
 </p>
 
@@ -43,15 +47,24 @@
 
 ## What snitchr watches
 
-- **Heartbeat** — alive and online
-- **Auth monitoring** — SSH logins, sudo events, authentication failures
-- **File integrity** — /etc/passwd, sshd_config, crontabs, authorized_keys (Linux); /etc/sudoers, LaunchDaemons (macOS)
-- **Process detection** — new processes vs captured baseline
-- **Port detection** — new listening ports vs captured baseline
-- **CPU spike alerts** — alert when CPU usage exceeds 90%
-- **Memory spike alerts** — alert when memory usage exceeds 90%
-- **Disk space alerts** — alert when disk usage exceeds 90% + trend of filling
-- **Mount detection** — new filesystems mounted or existing ones removed vs baseline
+- **Heartbeat:** alive and online
+- **Auth monitoring:** SSH logins, sudo events, authentication failures
+- **File integrity:** /etc/passwd, sshd_config, crontabs, authorized_keys (Linux); /etc/sudoers, LaunchDaemons (macOS)
+- **Process detection:** new processes vs captured baseline
+- **Port detection:** new listening ports vs captured baseline
+- **CPU spike alerts:** alert when CPU usage exceeds 90%
+- **Memory spike alerts:** alert when memory usage exceeds 90%
+- **Disk space alerts:** alert when disk usage exceeds 90% + trend of filling
+- **Mount detection:** new filesystems mounted or existing ones removed vs baseline
+
+## Notification channels
+
+- **[ntfy](https://ntfy.sh):** push to any ntfy topic (self-hosted or ntfy.sh)
+- **Webhooks:** POST JSON to any URL, with optional HMAC signing
+- **Slack:** incoming webhook integration
+- **Web Push:** browser notifications via the dashboard (VAPID/RFC 8292)
+
+All channels are configured in the settings page. Multiple channels can be active simultaneously.
 
 ## Quick start
 
@@ -94,9 +107,9 @@ The installer auto-detects your OS — sets up a **systemd** service on Linux or
                                       └───────────────┘
 ```
 
-- **Agent** — a bash script with platform modules for Linux (systemd, `/proc`, journalctl) and macOS (launchd, `sysctl`/`vm_stat`, Unified Logging). No runtime dependencies beyond bash and curl.
-- **Gateway** — a Hono app that stores data in R2/S3/filesystem, serves the dashboard, and pushes alerts. Runs on Cloudflare Workers free tier, Node.js 18+, or Bun.
-- **Dashboard** — static HTML served by the gateway. Machine overview, event timeline, alert history. No frontend framework.
+- **Agent:** a bash script with platform modules for Linux (systemd, `/proc`, journalctl) and macOS (launchd, `sysctl`/`vm_stat`, Unified Logging). No runtime dependencies beyond bash and curl.
+- **Gateway:** a Hono app that stores data in R2/S3/filesystem, serves the dashboard, and pushes alerts. Runs on Cloudflare Workers free tier, Node.js 18+, or Bun.
+- **Dashboard:** static HTML served by the gateway. Machine overview, event timeline, alert history. No frontend framework.
 
 ## Supported platforms
 
@@ -115,8 +128,8 @@ Just `#!/usr/bin/env bash`, a platform module, and the quiet confidence of a gra
 
 Full docs live in the **[Wiki](https://github.com/thinking-tools/snitchr/wiki)** — installation guides, configuration reference, update instructions, and more.
 
-| Topic                | Link                                                                                  |
-| -------------------- | ------------------------------------------------------------------------------------- |
+| Topic                | Link                                                                                    |
+| -------------------- | --------------------------------------------------------------------------------------- |
 | Installation & setup | [Wiki: Getting Started](https://github.com/thinking-tools/snitchr/wiki/Getting-Started) |
 | Configuration        | [Wiki: Configuration](https://github.com/thinking-tools/snitchr/wiki/Configuration)     |
 | Updating             | [Wiki: Updating](https://github.com/thinking-tools/snitchr/wiki/Updating)               |
@@ -128,7 +141,7 @@ Full docs live in the **[Wiki](https://github.com/thinking-tools/snitchr/wiki)**
 - Agent auth: per-machine bearer token (random 24-byte hex), one-time registration flow
 - Password hashing: PBKDF2-HMAC-SHA-256 with 100k iterations (max CF limit)
 - Sessions: HMAC-signed expiry timestamps in httpOnly cookies (24h TTL)
-- All data stays on your infrastructure — no telemetry, no phoning home
+- All data stays on your infrastructure: no telemetry, no phoning home
 
 Found a vulnerability? Please follow the [SECURITY.md](SECURITY.md)
 
