@@ -50,7 +50,7 @@ jobs:
           fetch-depth: 0 # Shallow clones should be disabled for better analysis
 
       - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 22
           cache: npm
@@ -65,7 +65,7 @@ jobs:
 
         # You can pin the exact commit or the version.
         # uses: SonarSource/sonarcloud-github-action@v7
-        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9 #pin to a specific commit v7
+        uses: SonarSource/sonarqube-scan-action@299e4b793aaa83bf2aba7c9c14bedbb485688ec4 #pin to a specific commit v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # Generate a token on Sonarcloud.io, add it to the secrets of this repo with the name SONAR_TOKEN (Settings > Secrets > Actions > add new repository secret)
         with:
