@@ -49,7 +49,7 @@
 
 - **Heartbeat:** alive and online
 - **Auth monitoring:** SSH logins, sudo events, authentication failures
-- **File integrity:** /etc/passwd, sshd_config, crontabs, authorized_keys (Linux); /etc/sudoers, LaunchDaemons (macOS)
+- **File integrity:** /etc/passwd, sshd_config, crontabs, authorized_keys, PAM config, logging config (Linux); /etc/sudoers, LaunchDaemons, PAM config, logging config (macOS)
 - **Process detection:** new processes vs captured baseline
 - **Port detection:** new listening ports vs captured baseline
 - **CPU spike alerts:** alert when CPU usage exceeds 90%

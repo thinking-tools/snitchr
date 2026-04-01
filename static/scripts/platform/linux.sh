@@ -125,12 +125,13 @@ platform_watched_files() {
   local files=(
     /etc/passwd /etc/group /etc/shadow /etc/sudoers
     /etc/ssh/sshd_config /root/.ssh/authorized_keys /etc/crontab
+    /etc/rsyslog.conf /etc/systemd/journald.conf
   )
   printf '%s\n' "${files[@]}"
 }
 
 platform_watched_dirs() {
-  local dirs=(/var/spool/cron/crontabs /etc/cron.d)
+  local dirs=(/var/spool/cron/crontabs /etc/cron.d /etc/pam.d /etc/security /etc/rsyslog.d)
   printf '%s\n' "${dirs[@]}"
 }
 

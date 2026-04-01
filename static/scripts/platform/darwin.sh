@@ -165,6 +165,7 @@ platform_watched_files() {
     /etc/hosts
     /etc/passwd
     /etc/group
+    /etc/syslog.conf
   )
   printf '%s\n' "${files[@]}"
 }
@@ -173,6 +174,8 @@ platform_watched_dirs() {
   local dirs=(
     /Library/LaunchDaemons
     /Library/LaunchAgents
+    /etc/pam.d
+    /Library/Preferences/Logging
   )
   printf '%s\n' "${dirs[@]}"
 }
