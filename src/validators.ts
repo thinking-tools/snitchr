@@ -118,7 +118,7 @@ export const validateNotificationChannel = (ch: unknown): Result<NotificationCha
       return ok({
         type: 'webhook',
         url: r.value,
-        secret: c.secret as string | undefined,
+        secret: c.secret,
         enabled: c.enabled,
       } as NotificationChannelConfig);
     }

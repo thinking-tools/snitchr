@@ -182,7 +182,7 @@ settings.post('/api/push/subscribe', async c => {
   await c.env.SNITCHR_CONFIG.put(PUSH_SUBS_KEY, JSON.stringify(subs));
 
   // Auto-enable webpush channel if not already present
-  if (!config.notifications) config.notifications = {};
+  config.notifications ??= {};
   if (!config.notifications.webpush) {
     config.notifications.webpush = { type: 'webpush', enabled: true };
     await c.env.SNITCHR_CONFIG.put('config', JSON.stringify(config));
