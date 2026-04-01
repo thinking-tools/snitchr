@@ -88,7 +88,7 @@
     "s3mini": "0.9.2"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "4.20260331.1",
+    "@cloudflare/workers-types": "4.20260401.1",
     "@types/node": "25.5.0",
     "@vitest/coverage-v8": "4.1.2",
     "oat-glassed": "0.2.2",
