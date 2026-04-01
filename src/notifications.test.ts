@@ -202,6 +202,31 @@ describe('notifications', () => {
       const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
       expect(body.attachments[0].color).toBe('#22c55e');
     });
+
+    it('uses default color for non-recovery/non-down alert', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response());
+      const channels: Record<string, NotificationChannelConfig> = {
+        slack: { type: 'slack', webhookUrl: 'https://hooks.slack.com/services/T/B/x', enabled: true },
+      };
+
+      await sendNotifications(channels, alertPayload(EventLevel.INFO, 'srv', 'info event'));
+
+      const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+      expect(body.attachments[0].color).toBe('#eab308');
+    });
+
+    it('uses fallback color for unknown priority', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response());
+      const channels: Record<string, NotificationChannelConfig> = {
+        slack: { type: 'slack', webhookUrl: 'https://hooks.slack.com/services/T/B/x', enabled: true },
+      };
+
+      const payload = { ...alertPayload(EventLevel.INFO, 'x', 'y'), priority: 'unknown' as never };
+      await sendNotifications(channels, payload);
+
+      const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+      expect(body.attachments[0].color).toBe('#6b7280');
+    });
   });
 
   describe('webpush dead subscription cleanup', () => {
@@ -329,6 +354,57 @@ describe('notifications', () => {
 
       const remaining = JSON.parse((await kv.get(SUBS_KEY))!);
       expect(remaining).toHaveLength(2);
+    });
+  });
+
+  describe('unknown channel type', () => {
+    it('skips channels with unrecognized type', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response());
+      const channels: Record<string, NotificationChannelConfig> = {
+        bad: { type: 'unknown' as never, enabled: true },
+      };
+
+      await sendNotifications(channels, alertPayload(EventLevel.WARN, 'x', 'y'));
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('webpush edge cases', () => {
+    const mockSendWebPush = sendWebPush as ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      mockSendWebPush.mockClear();
+    });
+
+    it('handles corrupt subscription JSON gracefully', async () => {
+      const kv = new InMemoryKV();
+      await kv.put('push_subscriptions', 'not valid json{{{');
+
+      const channels: Record<string, NotificationChannelConfig> = {
+        webpush: { type: 'webpush', enabled: true },
+      };
+
+      await expect(
+        sendNotifications(channels, alertPayload(EventLevel.WARN, 'x', 'y'), {
+          kv,
+          vapidKeys: { publicKey: 'pk', privateKey: 'sk' },
+        }),
+      ).resolves.toBeUndefined();
+    });
+
+    it('handles empty subscription list', async () => {
+      const kv = new InMemoryKV();
+      await kv.put('push_subscriptions', '[]');
+
+      const channels: Record<string, NotificationChannelConfig> = {
+        webpush: { type: 'webpush', enabled: true },
+      };
+
+      await sendNotifications(channels, alertPayload(EventLevel.WARN, 'x', 'y'), {
+        kv,
+        vapidKeys: { publicKey: 'pk', privateKey: 'sk' },
+      });
+      expect(mockSendWebPush).not.toHaveBeenCalled();
     });
   });
 
