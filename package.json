@@ -50,6 +50,9 @@
       },
       "SNITCHR_STORAGE": {
         "description": "R2 bucket for heartbeats, events, and alert history. If you prefer S3, you can configure it in the setup wizard after deploy."
+      },
+      "VAPID_CONTACT": {
+        "description": "Your email for Web Push VAPID identification (e.g. `you@example.com`). Optional — only needed if you enable browser push notifications."
       }
     }
   },
@@ -58,7 +61,7 @@
     "dev:remote": "wrangler dev --remote",
     "dev:node": "tsx src/cli.ts",
     "build:version": "node dev/build-version.mjs",
-    "deploy": "npm run build:version && wrangler deploy",
+    "deploy": "wrangler deploy",
     "prebuild:node": "rm -rf dist",
     "build:node": "npm run build:version && esbuild src/cli.ts --bundle --platform=node --format=esm --outfile=dist/cli.js --banner:js='#!/usr/bin/env node'",
     "seed": "node dev/seed.mjs",

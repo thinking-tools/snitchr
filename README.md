@@ -103,6 +103,8 @@ All channels are configured in the settings page. Multiple channels can be activ
 
 Click **Deploy**, set a password in the setup wizard, and copy the install command to your server.
 
+> **Note:** If deploy fails with an authentication error, enable your `*.workers.dev` subdomain first (CF dashboard → Compute → Workers & Pages → Subdomain), or add a [custom domain route](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/) in `wrangler.toml`.
+
 ### Option B: Self-hosted (Node.js / Bun)
 
 ```bash
