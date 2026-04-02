@@ -10,7 +10,7 @@
 
 How to Report a Vulnerability
 
-    Contact Us: Please send your report via email to peter@jensen.wtf This will ensure that it reaches the right us quickly.
+    Contact Us: Please send your report via email to **reports@thinking.tools** This will ensure that it reaches the right us quickly.
 
     Provide Details: Include as much information as possible about the vulnerability, such as the steps to reproduce it, its potential impact, and any suggestions you have for a fix.
 

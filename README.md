@@ -14,13 +14,13 @@
 </p>
 
 <p align="center">
- 
   <a href="https://www.npmjs.com/package/snitchr"><img src="https://img.shields.io/npm/v/snitchr?color=cb0000&label=npm" alt="npm version" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" /></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-strict-blue" alt="TypeScript strict" /></a>
   <a href="https://github.com/thinking-tools/snitchr/wiki"><img src="https://img.shields.io/badge/docs-wiki-blueviolet" alt="Wiki" /></a>
-  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen" alt="Contributions welcome" /></a>
-  <br>
+</p>
+
+<p align="center">
   <a href="https://sonarcloud.io/summary/new_code?id=thinking-tools_snitchr"><img src="https://sonarcloud.io/api/project_badges/measure?project=thinking-tools_snitchr&metric=alert_status" alt="Quality Gate Status" /></a>
   <a href="https://sonarcloud.io/summary/new_code?id=thinking-tools_snitchr"><img src="https://sonarcloud.io/api/project_badges/measure?project=thinking-tools_snitchr&metric=reliability_rating" alt="Reliability Rating" /></a>
   <a href="https://sonarcloud.io/summary/new_code?id=thinking-tools_snitchr"><img src="https://sonarcloud.io/api/project_badges/measure?project=thinking-tools_snitchr&metric=security_rating" alt="Security Rating" /></a>
@@ -28,9 +28,20 @@
   <a href="https://sonarcloud.io/summary/new_code?id=thinking-tools_snitchr"><img src="https://sonarcloud.io/api/project_badges/measure?project=thinking-tools_snitchr&metric=coverage" alt="Coverage" /></a>
   <a href="https://sonarcloud.io/summary/new_code?id=thinking-tools_snitchr"><img src="https://sonarcloud.io/api/project_badges/measure?project=thinking-tools_snitchr&metric=bugs" alt="Bugs" /></a>
   <a href="https://sonarcloud.io/summary/new_code?id=thinking-tools_snitchr"><img src="https://sonarcloud.io/api/project_badges/measure?project=thinking-tools_snitchr&metric=vulnerabilities" alt="Vulnerabilities" /></a>
-   <a href="https://github.com/thinking-tools/snitchr/actions/workflows/ci.yml"><img src="https://github.com/thinking-tools/snitchr/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/thinking-tools/snitchr/actions/workflows/ci.yml"><img src="https://github.com/thinking-tools/snitchr/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://github.com/thinking-tools/snitchr/actions/workflows/codeql.yml"><img src="https://github.com/thinking-tools/snitchr/actions/workflows/codeql.yml/badge.svg" alt="CodeQL" /></a>
   <a href="https://securityscorecards.dev/viewer/?uri=github.com/thinking-tools/snitchr"><img src="https://api.securityscorecards.dev/projects/github.com/thinking-tools/snitchr/badge" alt="OpenSSF Scorecard" /></a>
+  <a href="https://bundlephobia.com/package/snitchr"><img src="https://img.shields.io/bundlephobia/minzip/snitchr" alt="Bundle size" /></a>
+  <a href="https://www.npmjs.com/package/snitchr"><img src="https://img.shields.io/librariesio/release/npm/snitchr" alt="Dependencies" /></a>
+</p>
+
+<p align="center">
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen" alt="Contributions welcome" /></a>
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="PRs Welcome" /></a>
+  <a href="https://github.com/thinking-tools/snitchr/pulse"><img src="https://img.shields.io/github/commit-activity/w/thinking-tools/snitchr" alt="Commits per week" /></a>
 </p>
 
 <p align="center">

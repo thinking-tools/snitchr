@@ -30,6 +30,18 @@ npm run dev:node
 
 The Node/Bun server auto-detects your LAN IP so install commands work from Docker containers and remote machines without manual URL editing.
 
+### Trigger scheduled checks
+
+The gateway checks for down machines and disk fill predictions every 5 minutes.
+
+**Cloudflare Workers** — trigger manually during local dev:
+
+```bash
+curl "http://localhost:8787/cdn-cgi/handler/scheduled"
+```
+
+**Node.js / Bun** — runs automatically via an internal timer. No manual trigger needed.
+
 ### Run remotely (Cloudflare preview)
 
 If using R2 storage, create the bucket first:

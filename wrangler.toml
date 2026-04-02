@@ -8,7 +8,6 @@ directory = "./static"
 binding = "ASSETS"
 html_handling = "none"
 not_found_handling = "none"
-exclude = [".DS_Store"]
 
 [[kv_namespaces]]
 binding = "SNITCHR_CONFIG"

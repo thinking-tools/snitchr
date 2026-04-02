@@ -1,0 +1,100 @@
+name: API Fuzz Tests
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: fuzz-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build:node
+
+      # ── Start gateway and seed test data ─────────────────────────────
+      - name: Bootstrap gateway
+        id: gw
+        run: |
+          # Start the Node.js gateway in the background
+          node dist/cli.js --port 8787 --data-dir /tmp/snitchr-fuzz &
+          echo "pid=$!" >> "$GITHUB_OUTPUT"
+
+          # Wait for readiness (up to 30s)
+          timeout 30 bash -c \
+            'until curl -sf http://localhost:8787/api/capabilities >/dev/null 2>&1; do sleep 1; done'
+
+          # 1. Initial setup (memory storage — no R2/S3 in CI)
+          curl -sf -X POST http://localhost:8787/api/setup \
+            -H 'Content-Type: application/json' \
+            -d '{"password":"fuzzpass123!","passwordConfirm":"fuzzpass123!","storageMode":"memory"}'
+
+          # 2. Login — capture session cookie
+          SESSION=$(curl -sf -D - -X POST http://localhost:8787/api/login \
+            -H 'Content-Type: application/json' \
+            -d '{"password":"fuzzpass123!"}' \
+            | grep -i '^set-cookie:.*session=' | sed 's/.*session=\([^;]*\).*/\1/')
+          echo "session=$SESSION" >> "$GITHUB_OUTPUT"
+
+          # 3. Generate install token
+          TOKEN=$(curl -sf -X POST http://localhost:8787/api/install-token \
+            -H "Cookie: session=$SESSION" | jq -r '.token')
+
+          # 4. Register a machine
+          REG=$(curl -sf -X POST http://localhost:8787/register \
+            -H 'Content-Type: application/json' \
+            -d "{\"token\":\"$TOKEN\",\"sysinfo\":{\"hostname\":\"fuzz-host\",\"os\":\"Ubuntu 22.04\"}}")
+          MACHINE_ID=$(echo "$REG" | jq -r '.id')
+          MACHINE_SECRET=$(echo "$REG" | jq -r '.secret')
+          echo "machine_id=$MACHINE_ID" >> "$GITHUB_OUTPUT"
+          echo "machine_secret=$MACHINE_SECRET" >> "$GITHUB_OUTPUT"
+
+          # 5. Seed a heartbeat so GET endpoints return real data
+          NOW_MS=$(($(date +%s) * 1000))
+          curl -sf -X POST "http://localhost:8787/m/$MACHINE_ID/ingest" \
+            -H "Authorization: Bearer $MACHINE_SECRET" \
+            -H 'Content-Type: application/json' \
+            -d "{\"t\":0,\"d\":{\"ts\":$NOW_MS,\"up\":3600,\"cpu\":12.5,\"mem\":[4096,8192],\"disk\":[45],\"load\":[1.2,0.8,0.6],\"procs\":142,\"net\":[1073741824,536870912],\"ports\":\"22,80\",\"users\":\"root\"}}"
+
+          # 6. Seed an alert so alert endpoints return data
+          curl -sf -X POST "http://localhost:8787/m/$MACHINE_ID/ingest" \
+            -H "Authorization: Bearer $MACHINE_SECRET" \
+            -H 'Content-Type: application/json' \
+            -d "{\"t\":2,\"d\":{\"type\":\"ssh_login\",\"msg\":\"Accepted publickey for root from 10.0.0.1 port 54321\"}}"
+
+          echo "Gateway bootstrapped (machine=$MACHINE_ID)"
+
+      # ── Schemathesis fuzz run ────────────────────────────────────────
+      - uses: schemathesis/action@v2
+        with:
+          schema: docs/openapi-gateway.yaml
+          base-url: http://localhost:8787
+          checks: all
+          args: >-
+            -H "Cookie: session=${{ steps.gw.outputs.session }}"
+            -H "Authorization: Bearer ${{ steps.gw.outputs.machine_secret }}"
+            --exclude-path "/api/setup"
+            --exclude-path "/api/logout"
+            --exclude-path "/api/settings/reset"
+            --exclude-path "/api/settings/password"
+            --exclude-path "/install-agent"
+            --max-response-time 5
+
+      - name: Stop gateway
+        if: always()
+        run: kill ${{ steps.gw.outputs.pid }} 2>/dev/null || true

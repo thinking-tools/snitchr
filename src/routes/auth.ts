@@ -153,8 +153,8 @@ auth.get('/agent', handleInstallAgent);
 auth.get('/install-agent', handleInstallAgent);
 
 auth.post('/register', async c => {
-  const body = await c.req.json<{ token: string; sysinfo: Record<string, unknown> }>();
-  if (typeof body.token !== 'string' || !body.token) return c.json({ error: 'Token required' }, 400);
+  const body = await c.req.json<{ token: string; sysinfo: Record<string, unknown> }>().catch(() => null);
+  if (!body || typeof body.token !== 'string' || !body.token) return c.json({ error: 'Token required' }, 400);
 
   const config = await getConfig(c.env.SNITCHR_CONFIG);
   if (!config?.pendingToken || config.pendingToken !== normalizeToken(body.token)) {

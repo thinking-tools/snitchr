@@ -1,0 +1,1355 @@
+openapi: 3.1.0
+info:
+  title: snitchr Gateway API
+  version: 0.1.0
+  description: |
+    API for the snitchr monitoring gateway. Runs on Cloudflare Workers, Node.js, or Bun.
+
+    Two auth models:
+    - **Session cookie** — HMAC-signed expiry timestamp in httpOnly cookie (24h TTL). Used by all dashboard/admin endpoints.
+    - **Bearer token** — per-machine 48-char hex secret. Used by the agent ingest endpoint only.
+  license:
+    name: MIT
+    url: https://github.com/thinking-tools/snitchr/blob/main/LICENSE
+  contact:
+    name: snitchr
+    url: https://snitchr.sh
+
+servers:
+  - url: https://{host}
+    description: snitchr gateway
+    variables:
+      host:
+        default: localhost:8787
+
+tags:
+  - name: Setup & Auth
+    description: Initial setup, login/logout, machine registration
+  - name: Machines
+    description: Machine listing, details, and management
+  - name: Agent Ingest
+    description: Agent-facing telemetry endpoint
+  - name: Settings
+    description: Configuration, notifications, password management
+  - name: Push Notifications
+    description: Web push subscription management
+  - name: System
+    description: Version and capabilities
+
+# ── Security schemes ──────────────────────────────────────────────────
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session
+      description: HMAC-signed expiry timestamp (24h TTL)
+    bearerToken:
+      type: http
+      scheme: bearer
+      description: Per-machine 48-char hex secret
+
+  # ── Reusable schemas ──────────────────────────────────────────────────
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+
+    Ok:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+
+    EventLevel:
+      type: integer
+      enum: [0, 1, 2, 3, 4, 5]
+      description: |
+        0=HEARTBEAT, 1=INFO, 2=WARN, 3=ERROR, 4=CRITICAL, 5=SHUTDOWN
+
+    EventType:
+      type: string
+      enum:
+        - ssh_login
+        - ssh_fail
+        - sudo
+        - su
+        - auth_fail
+        - new_process
+        - new_port
+        - mount_change
+        - cpu_spike
+        - mem_spike
+        - disk_high
+        - file_change
+        - crontab_change
+        - shutdown
+
+    StorageMode:
+      type: string
+      enum: [r2, s3, filesystem, memory]
+
+    PortInfo:
+      type: object
+      required: [port, addr, proc]
+      properties:
+        port:
+          type: integer
+        addr:
+          type: string
+        proc:
+          type: string
+
+    MountInfo:
+      type: object
+      required: [src, target, fs]
+      properties:
+        src:
+          type: string
+        target:
+          type: string
+        fs:
+          type: string
+
+    TtyInfo:
+      type: object
+      required: [user, tty, from, login]
+      properties:
+        user:
+          type: string
+        tty:
+          type: string
+        from:
+          type: string
+        login:
+          type: number
+
+    HeartbeatData:
+      type: object
+      required: [ts, up, cpu, mem, disk, load, procs, net, ports, users]
+      properties:
+        ts:
+          type: number
+          description: Timestamp (ms since epoch)
+        up:
+          type: number
+          description: Uptime in seconds
+        cpu:
+          type: number
+          description: CPU usage percentage
+        mem:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+          description: '[used_mb, total_mb]'
+        disk:
+          type: array
+          items:
+            type: number
+          description: Disk usage percentages per mount
+        load:
+          type: array
+          items:
+            type: number
+          minItems: 3
+          maxItems: 3
+          description: '[1min, 5min, 15min] load averages'
+        procs:
+          type: integer
+          description: Running process count
+        net:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+          description: '[rx_bytes, tx_bytes] cumulative'
+        ports:
+          type: string
+          description: Comma-separated listening ports
+        users:
+          type: string
+          description: Comma-separated logged-in users
+        procList:
+          type: string
+          description: Pipe-delimited unique process names (sent on change only)
+        portList:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortInfo'
+          description: Detailed listening ports (sent on change only)
+        mountList:
+          type: array
+          items:
+            $ref: '#/components/schemas/MountInfo'
+          description: Mounted filesystems (sent on change only)
+        ttyList:
+          type: array
+          items:
+            $ref: '#/components/schemas/TtyInfo'
+          description: Active TTY sessions (sent on change only)
+
+    AlertData:
+      type: object
+      required: [type, msg]
+      properties:
+        type:
+          $ref: '#/components/schemas/EventType'
+        msg:
+          type: string
+          maxLength: 2000
+        unit:
+          type: string
+
+    EventEntry:
+      type: object
+      required: [t, ts, d]
+      properties:
+        t:
+          $ref: '#/components/schemas/EventLevel'
+        ts:
+          type: number
+        d:
+          oneOf:
+            - $ref: '#/components/schemas/HeartbeatData'
+            - $ref: '#/components/schemas/AlertData'
+
+    DiskPrediction:
+      type: object
+      required: [trend, lastSamplePct]
+      properties:
+        trend:
+          type: string
+          enum: [filling, stable, unknown]
+        hoursToThreshold:
+          type: ['number', 'null']
+        lastSamplePct:
+          type: number
+
+    AgentFeatures:
+      type: object
+      properties:
+        authWatch:
+          type: boolean
+        fileIntegrity:
+          type: boolean
+        processWatch:
+          type: boolean
+        portWatch:
+          type: boolean
+        mountWatch:
+          type: boolean
+        cpuAlerts:
+          type: boolean
+        memAlerts:
+          type: boolean
+        diskAlerts:
+          type: boolean
+
+    NotificationChannel:
+      oneOf:
+        - type: object
+          required: [type, endpoint, enabled]
+          properties:
+            type:
+              type: string
+              enum: [ntfy]
+            endpoint:
+              type: string
+              format: uri
+            enabled:
+              type: boolean
+        - type: object
+          required: [type, url, enabled]
+          properties:
+            type:
+              type: string
+              enum: [webhook]
+            url:
+              type: string
+              format: uri
+            secret:
+              type: string
+            enabled:
+              type: boolean
+        - type: object
+          required: [type, webhookUrl, enabled]
+          properties:
+            type:
+              type: string
+              enum: [slack]
+            webhookUrl:
+              type: string
+              format: uri
+            enabled:
+              type: boolean
+        - type: object
+          required: [type, enabled]
+          properties:
+            type:
+              type: string
+              enum: [webpush]
+            enabled:
+              type: boolean
+      discriminator:
+        propertyName: type
+
+    MachineListItem:
+      type: object
+      required: [id, online, alertCount]
+      description: Optional fields (label, lat, lng, city, country, lastSeen, d, diskPrediction) are omitted when not available, not null.
+      properties:
+        id:
+          type: string
+          format: uuid
+        label:
+          type: string
+        registeredAt:
+          type: number
+        lat:
+          type: number
+        lng:
+          type: number
+        city:
+          type: string
+        country:
+          type: string
+        online:
+          type: boolean
+        lastSeen:
+          type: number
+        d:
+          $ref: '#/components/schemas/HeartbeatData'
+        alertCount:
+          type: integer
+        diskPrediction:
+          $ref: '#/components/schemas/DiskPrediction'
+
+    WebPushSubscription:
+      type: object
+      required: [endpoint, keys]
+      properties:
+        endpoint:
+          type: string
+          format: uri
+        expirationTime:
+          type: ['number', 'null']
+        keys:
+          type: object
+          required: [p256dh, auth]
+          properties:
+            p256dh:
+              type: string
+              minLength: 1
+              description: Diffie-Hellman public key (base64url)
+            auth:
+              type: string
+              minLength: 1
+              description: Authentication secret (base64url)
+
+  responses:
+    Unauthorized:
+      description: Invalid or missing authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+# ── Paths ─────────────────────────────────────────────────────────────
+
+paths:
+  # ── Setup & Auth ────────────────────────────────────────────────────
+
+  /api/capabilities:
+    get:
+      tags: [Setup & Auth]
+      summary: Check system capabilities
+      description: Returns available storage backends and whether the system is configured. No auth required.
+      operationId: getCapabilities
+      security: []
+      responses:
+        '200':
+          description: Capabilities
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [r2Available, filesystemAvailable, configured]
+                properties:
+                  r2Available:
+                    type: boolean
+                  filesystemAvailable:
+                    type: boolean
+                  configured:
+                    type: boolean
+
+  /api/setup:
+    post:
+      tags: [Setup & Auth]
+      summary: Initial system setup
+      description: Set admin password and configure storage. Fails if already configured.
+      operationId: setup
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password, passwordConfirm, storageMode]
+              properties:
+                password:
+                  type: string
+                  minLength: 8
+                passwordConfirm:
+                  type: string
+                storageMode:
+                  $ref: '#/components/schemas/StorageMode'
+                s3Endpoint:
+                  type: string
+                  format: uri
+                s3Bucket:
+                  type: string
+                s3Region:
+                  type: string
+                s3AccessKey:
+                  type: string
+                s3SecretKey:
+                  type: string
+      responses:
+        '200':
+          description: Setup complete; session cookie set
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          description: Already configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/login:
+    post:
+      tags: [Setup & Auth]
+      summary: Admin login
+      description: Authenticate with admin password. Rate-limited to 5 attempts per 15 minutes per IP.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+                  minLength: 1
+      responses:
+        '200':
+          description: Login successful; session cookie set
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          description: Rate limited
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/logout:
+    get:
+      tags: [Setup & Auth]
+      summary: Logout
+      description: Clear session cookie and redirect to root.
+      operationId: logout
+      security: []
+      responses:
+        '302':
+          description: Redirect to /
+          headers:
+            Location:
+              schema:
+                type: string
+                enum: [/]
+            Set-Cookie:
+              schema:
+                type: string
+
+  /api/install-token:
+    post:
+      tags: [Setup & Auth]
+      summary: Generate agent install token
+      description: Returns a human-typeable Crockford Base32 token (XXXXX-XXXXX) for agent registration. Reuses pending token if one exists.
+      operationId: createInstallToken
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Install token
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token]
+                properties:
+                  token:
+                    type: string
+                    pattern: '^[0-9A-Z]{5}-[0-9A-Z]{5}$'
+                    example: 'A1B2C-D3E4F'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /agent:
+    get:
+      tags: [Setup & Auth]
+      summary: Download agent install script
+      description: Returns the agent installation shell script with the gateway URL and token injected. Also accessible at /install-agent.
+      operationId: getAgentScript
+      security: []
+      parameters:
+        - name: init
+          in: query
+          description: Installation token (alternative to `token` param)
+          schema:
+            type: string
+        - name: token
+          in: query
+          description: Installation token (alternative to `init` param)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Shell script
+          content:
+            text/plain:
+              schema:
+                type: string
+        '400':
+          description: Missing token
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Token required
+        '403':
+          description: Invalid or expired token
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Invalid or expired token
+
+  /install-agent:
+    get:
+      tags: [Setup & Auth]
+      summary: Download agent install script (alias)
+      description: Alias for GET /agent. Identical behavior.
+      operationId: getAgentScriptAlias
+      security: []
+      parameters:
+        - name: init
+          in: query
+          schema:
+            type: string
+        - name: token
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Shell script
+          content:
+            text/plain:
+              schema:
+                type: string
+        '400':
+          description: Missing token
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: Invalid or expired token
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /register:
+    post:
+      tags: [Setup & Auth]
+      summary: Register new agent
+      description: Called by the agent installer. Validates the one-time token, creates a machine entry, and returns credentials. Geo-enriched from Cloudflare headers when available.
+      operationId: registerAgent
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  minLength: 1
+                  description: Crockford Base32 install token
+                sysinfo:
+                  type: object
+                  description: Agent-collected system info (hostname, OS, arch, etc.)
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, secret]
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: Machine ID
+                  secret:
+                    type: string
+                    pattern: '^[0-9a-f]{48}$'
+                    description: Bearer token (24-byte hex)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/config:
+    get:
+      tags: [Setup & Auth]
+      summary: Get dashboard config
+      description: Returns machine IDs, alert threshold, and storage mode.
+      operationId: getConfig
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Dashboard config
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [machineIds, alertThreshold, storageMode]
+                properties:
+                  machineIds:
+                    type: array
+                    items:
+                      type: string
+                      format: uuid
+                  alertThreshold:
+                    $ref: '#/components/schemas/EventLevel'
+                  storageMode:
+                    $ref: '#/components/schemas/StorageMode'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Agent Ingest ────────────────────────────────────────────────────
+
+  /m/{id}/ingest:
+    post:
+      tags: [Agent Ingest]
+      summary: Agent telemetry ingest
+      description: |
+        Primary agent endpoint. Accepts heartbeats (t=0) and alert events (t=1-5).
+
+        **Side effects:**
+        - t=0: updates machine status (metrics, lastSeen, disk velocity samples)
+        - t=1-4: appends to event log and alerts array, triggers notifications if threshold met
+        - t=5: marks machine offline immediately
+
+        Events for disabled features are silently accepted (200/ok) without storage.
+        Duplicate alerts (same type+msg within heartbeat window) are deduplicated.
+      operationId: ingest
+      security:
+        - bearerToken: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [t, d]
+              properties:
+                t:
+                  $ref: '#/components/schemas/EventLevel'
+                d:
+                  oneOf:
+                    - $ref: '#/components/schemas/HeartbeatData'
+                    - $ref: '#/components/schemas/AlertData'
+              example:
+                t: 0
+                d:
+                  ts: 1711929600000
+                  up: 86400
+                  cpu: 12.5
+                  mem: [4096, 8192]
+                  disk: [45]
+                  load: [1.2, 0.8, 0.6]
+                  procs: 142
+                  net: [1073741824, 536870912]
+                  ports: '22,80,443'
+                  users: root
+        description: Max 8 KB payload
+      responses:
+        '200':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          description: Payload too large (>8 KB)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Not configured or storage unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Machines ────────────────────────────────────────────────────────
+
+  /api/machines:
+    get:
+      tags: [Machines]
+      summary: List all machines
+      description: Returns all registered machines with their latest status, alert counts, and disk predictions.
+      operationId: listMachines
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Machine list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [machines, heartbeatTimeout, alertThreshold]
+                properties:
+                  machines:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MachineListItem'
+                  heartbeatTimeout:
+                    type: integer
+                    description: Seconds before a machine is considered offline (default 120)
+                  alertThreshold:
+                    $ref: '#/components/schemas/EventLevel'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/machines/{id}:
+    get:
+      tags: [Machines]
+      summary: Get machine details
+      description: Returns machine info, latest heartbeat data, pending alerts, and disk prediction.
+      operationId: getMachine
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Machine details
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, online, alerts]
+                description: Optional fields (label, city, country, lastSeen, d, diskPrediction) are omitted when not available.
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  label:
+                    type: string
+                  registeredAt:
+                    type: number
+                  city:
+                    type: string
+                  country:
+                    type: string
+                  online:
+                    type: boolean
+                  lastSeen:
+                    type: number
+                  d:
+                    $ref: '#/components/schemas/HeartbeatData'
+                  alerts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventEntry'
+                  diskPrediction:
+                    $ref: '#/components/schemas/DiskPrediction'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Machines]
+      summary: Update machine
+      description: Update machine label. Empty string clears the label.
+      operationId: updateMachine
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label:
+                  type: string
+                  maxLength: 100
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Machines]
+      summary: Delete machine
+      description: Deregister machine and purge all stored data (status, logs, alerts).
+      operationId: deleteMachine
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ok'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/machines/{id}/events:
+    get:
+      tags: [Machines]
+      summary: Get machine event log
+      description: Paginated event history for a specific date. Returns newest first.
+      operationId: getMachineEvents
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: date
+          in: query
+          description: Date filter (YYYY-MM-DD). Defaults to today.
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          description: Max events to return (1-200, default 50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: cursor
+          in: query
+          description: Pagination cursor from previous response
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Event list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [events, truncated]
+                properties:
+                  events:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventEntry'
+                  cursor:
+                    type: string
+                    description: Pass to next request for pagination
+                  truncated:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/machines/{id}/alerts:
+    get:
+      tags: [Machines]
+      summary: Get machine alerts
+      description: Returns recent alerts (max 100, FIFO, newest first).
+      operationId: getMachineAlerts
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Alert list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [alerts]
+                properties:
+                  alerts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventEntry'
+                    maxItems: 100
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Machines]
+      summary: Clear machine alerts
+      description: Dismiss all pending alerts for a machine.
+      operationId: clearMachineAlerts
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cleared
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ok'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Settings ────────────────────────────────────────────────────────
+
+  /api/settings:
+    get:
+      tags: [Settings]
+      summary: Get all settings
+      description: Returns alert threshold, heartbeat timeout, notification channels, agent features, storage mode, and machine count.
+      operationId: getSettings
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [alertThreshold, heartbeatTimeout, notifications, agentFeatures, storageMode, machineCount]
+                properties:
+                  alertThreshold:
+                    type: integer
+                    minimum: 1
+                    maximum: 4
+                  heartbeatTimeout:
+                    type: integer
+                    minimum: 30
+                    maximum: 3600
+                  notifications:
+                    type: object
+                    additionalProperties:
+                      $ref: '#/components/schemas/NotificationChannel'
+                  agentFeatures:
+                    $ref: '#/components/schemas/AgentFeatures'
+                  storageMode:
+                    $ref: '#/components/schemas/StorageMode'
+                  machineCount:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    patch:
+      tags: [Settings]
+      summary: Update settings
+      description: Partially update monitoring thresholds, notification channels, or agent feature flags.
+      operationId: updateSettings
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                alertThreshold:
+                  type: integer
+                  minimum: 1
+                  maximum: 4
+                heartbeatTimeout:
+                  type: integer
+                  minimum: 30
+                  maximum: 3600
+                notifications:
+                  type: object
+                  additionalProperties:
+                    $ref: '#/components/schemas/NotificationChannel'
+                agentFeatures:
+                  $ref: '#/components/schemas/AgentFeatures'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/settings/password:
+    post:
+      tags: [Settings]
+      summary: Change admin password
+      description: Verify current password and set a new one. Issues a new session cookie.
+      operationId: changePassword
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword, confirmPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 8
+                confirmPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password changed; new session cookie set
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/settings/test-notification:
+    post:
+      tags: [Settings]
+      summary: Test a notification channel
+      description: Send a test notification to the specified channel.
+      operationId: testNotification
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [channel]
+              properties:
+                channel:
+                  type: string
+                  minLength: 1
+                  description: Notification channel key
+      responses:
+        '200':
+          description: Test notification sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/settings/reset:
+    post:
+      tags: [Settings]
+      summary: Factory reset
+      description: Wipe all data and config. Requires current password for verification. Clears session and redirects to setup.
+      operationId: factoryReset
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Reset complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Push Notifications ──────────────────────────────────────────────
+
+  /api/push/vapid-key:
+    get:
+      tags: [Push Notifications]
+      summary: Get VAPID public key
+      description: Returns the VAPID public key for web push subscriptions. Auto-generates keys on first call.
+      operationId: getVapidKey
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: VAPID key
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [publicKey]
+                properties:
+                  publicKey:
+                    type: string
+                    description: VAPID public key (base64url)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/push/subscribe:
+    post:
+      tags: [Push Notifications]
+      summary: Subscribe to web push
+      description: Register a browser for push notifications. Auto-enables webpush channel. Max 50 subscriptions (deduped by endpoint).
+      operationId: subscribePush
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebPushSubscription'
+      responses:
+        '200':
+          description: Subscribed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/push/unsubscribe:
+    post:
+      tags: [Push Notifications]
+      summary: Unsubscribe from web push
+      description: Remove a browser subscription. Auto-disables webpush channel if no subscriptions remain.
+      operationId: unsubscribePush
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint]
+              properties:
+                endpoint:
+                  type: string
+                  format: uri
+                  minLength: 1
+      responses:
+        '200':
+          description: Unsubscribed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── System ──────────────────────────────────────────────────────────
+
+  /api/version:
+    get:
+      tags: [System]
+      summary: Version and update info
+      description: Returns current version, latest available version from npm, runtime environment, and build metadata. Caches npm lookup for 24h.
+      operationId: getVersion
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Version info
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [current, updateAvailable, runtime, commit, buildTime]
+                properties:
+                  current:
+                    type: string
+                    description: Current semver version
+                    example: '0.1.0'
+                  latest:
+                    type: ['string', 'null']
+                    description: Latest npm version (null if unreachable)
+                  updateAvailable:
+                    type: boolean
+                  runtime:
+                    type: string
+                    description: Runtime identifier from Hono (e.g. "workerd", "node", "bun")
+                  commit:
+                    type: string
+                    description: Git commit hash
+                  buildTime:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'

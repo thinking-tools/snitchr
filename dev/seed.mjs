@@ -2,15 +2,11 @@ import { execSync } from 'node:child_process';
 
 const toHex = arr => [...arr].map(b => b.toString(16).padStart(2, '0')).join('');
 
-const password = 'snitchr';
+const password = 'snitchr123';
 const salt = crypto.getRandomValues(new Uint8Array(32));
-const keyMaterial = await crypto.subtle.importKey(
-  'raw',
-  new TextEncoder().encode(password),
-  'PBKDF2',
-  false,
-  ['deriveBits'],
-);
+const keyMaterial = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, [
+  'deriveBits',
+]);
 const derived = await crypto.subtle.deriveBits(
   { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 100_000 },
   keyMaterial,
@@ -20,7 +16,13 @@ const hash = new Uint8Array(derived);
 
 const day = 86400_000;
 const m = (secret, label, daysAgo, lat, lng, city, country) => ({
-  secret, label, registeredAt: Date.now() - day * daysAgo, lat, lng, city, country,
+  secret,
+  label,
+  registeredAt: Date.now() - day * daysAgo,
+  lat,
+  lng,
+  city,
+  country,
 });
 
 const machines = {
@@ -43,7 +45,7 @@ const machines = {
   'machine-ubuntu-008': m('dev-secret-016', 'edge-us-2', 3, 34.05, -118.24, 'Los Angeles', 'US'),
   'machine-debian-010': m('dev-secret-017', 'edge-asia-1', 2, 22.32, 114.17, 'Hong Kong', 'HK'),
   'machine-ubuntu-009': m('dev-secret-018', 'edge-asia-2', 1, 37.57, 126.98, 'Seoul', 'KR'),
-  'machine-debian-011': m('dev-secret-019', 'backup-1', 1, -34.60, -58.38, 'Buenos Aires', 'AR'),
+  'machine-debian-011': m('dev-secret-019', 'backup-1', 1, -34.6, -58.38, 'Buenos Aires', 'AR'),
 };
 
 const config = {
@@ -61,6 +63,6 @@ execSync(`wrangler kv key put --binding SNITCHR_CONFIG config '${json}' --local`
   stdio: 'inherit',
 });
 
-console.log('\n  Dev login:  password = snitchr');
+console.log('\n  Dev login:  password = snitchr123');
 console.log(`  Machines:   ${Object.keys(machines).length} seeded`);
 console.log('  Seed status: npm run seed:status  (requires dev server running)\n');
