@@ -105,7 +105,7 @@
     "typescript": "6.0.2",
     "vitest": "4.1.2",
     "world-atlas": "2.0.2",
-    "wrangler": "4.79.0"
+    "wrangler": "4.80.0"
   },
   "prettier": {
     "bracketSpacing": true,

@@ -17,8 +17,8 @@
   <a href="https://www.npmjs.com/package/snitchr"><img src="https://img.shields.io/npm/v/snitchr?color=cb0000&label=npm" alt="npm version" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" /></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-strict-blue" alt="TypeScript strict" /></a>
-  <a href="https://bundlephobia.com/package/snitchr"><img src="https://img.shields.io/bundlephobia/minzip/snitchr" alt="Bundle size" /></a>
-  <a href="https://www.npmjs.com/package/snitchr"><img src="https://img.shields.io/librariesio/release/npm/snitchr" alt="Dependencies" /></a>
+  <a href="https://www.npmjs.com/package/snitchr"><img src="https://img.shields.io/npm/unpacked-size/snitchr" alt="npm unpacked size" /></a>
+  <a href="https://www.npmjs.com/package/snitchr"><img src="https://img.shields.io/npm/dw/snitchr" alt="npm downloads" /></a>
 </p>
 
 <p align="center">
@@ -48,7 +48,7 @@
 - ✅ **Tested:** unit, integration, property-based, fuzz, and end-to-end tests. Static analysis via CodeQL and SonarCloud. OpenSSF Scorecard tracked.
 
 <p align="center">
-  <a href="https://github.com/thinking-tools/snitchr/actions/workflows/ci.yml"><img src="https://github.com/thinking-tools/snitchr/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/thinking-tools/snitchr/actions/workflows/pipeline.yml"><img src="https://github.com/thinking-tools/snitchr/actions/workflows/pipeline.yml/badge.svg" alt="Pipeline" /></a>
   <a href="https://github.com/thinking-tools/snitchr/actions/workflows/codeql.yml"><img src="https://github.com/thinking-tools/snitchr/actions/workflows/codeql.yml/badge.svg" alt="CodeQL" /></a>
   <a href="https://securityscorecards.dev/viewer/?uri=github.com/thinking-tools/snitchr"><img src="https://api.securityscorecards.dev/projects/github.com/thinking-tools/snitchr/badge" alt="OpenSSF Scorecard" /></a>
   <a href="https://sonarcloud.io/summary/new_code?id=thinking-tools_snitchr"><img src="https://sonarcloud.io/api/project_badges/measure?project=thinking-tools_snitchr&metric=alert_status" alt="Quality Gate Status" /></a>
