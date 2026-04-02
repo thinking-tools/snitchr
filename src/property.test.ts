@@ -68,10 +68,9 @@ describe('cshakeHash', () => {
 });
 
 describe('hashPassword', () => {
-  test.prop(
-    [fc.string({ minLength: 1, maxLength: 10 }), fc.uint8Array({ minLength: 32, maxLength: 32 })],
-    { numRuns: 5 },
-  )('returns 64-char hex (256-bit) and is deterministic', async (password, salt) => {
+  test.prop([fc.string({ minLength: 1, maxLength: 10 }), fc.uint8Array({ minLength: 32, maxLength: 32 })], {
+    numRuns: 5,
+  })('returns 64-char hex (256-bit) and is deterministic', async (password, salt) => {
     const hash = await hashPassword(password, salt);
     expect(hash).toMatch(/^[0-9a-f]{64}$/);
     expect(await hashPassword(password, salt)).toBe(hash);
