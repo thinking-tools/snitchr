@@ -100,6 +100,7 @@ components:
     PortInfo:
       type: object
       required: [port, addr, proc]
+      additionalProperties: false
       properties:
         port:
           type: integer
@@ -111,6 +112,7 @@ components:
     MountInfo:
       type: object
       required: [src, target, fs]
+      additionalProperties: false
       properties:
         src:
           type: string
@@ -122,6 +124,7 @@ components:
     TtyInfo:
       type: object
       required: [user, tty, from, login]
+      additionalProperties: false
       properties:
         user:
           type: string
@@ -135,6 +138,7 @@ components:
     HeartbeatData:
       type: object
       required: [ts, up, cpu, mem, disk, load, procs, net, ports, users]
+      additionalProperties: false
       properties:
         ts:
           type: number
@@ -202,6 +206,7 @@ components:
     AlertData:
       type: object
       required: [type, msg]
+      additionalProperties: false
       properties:
         type:
           $ref: '#/components/schemas/EventType'
@@ -226,15 +231,13 @@ components:
 
     DiskPrediction:
       type: object
-      required: [trend, lastSamplePct]
+      required: [trend]
       properties:
         trend:
           type: string
-          enum: [filling, stable, unknown]
+          enum: [filling, stable, shrinking]
         hoursToThreshold:
           type: ['number', 'null']
-        lastSamplePct:
-          type: number
 
     AgentFeatures:
       type: object
@@ -260,6 +263,7 @@ components:
       oneOf:
         - type: object
           required: [type, endpoint, enabled]
+          additionalProperties: false
           properties:
             type:
               type: string
@@ -271,6 +275,7 @@ components:
               type: boolean
         - type: object
           required: [type, url, enabled]
+          additionalProperties: false
           properties:
             type:
               type: string
@@ -284,6 +289,7 @@ components:
               type: boolean
         - type: object
           required: [type, webhookUrl, enabled]
+          additionalProperties: false
           properties:
             type:
               type: string
@@ -291,10 +297,12 @@ components:
             webhookUrl:
               type: string
               format: uri
+              pattern: '^https://hooks\.slack\.com/'
             enabled:
               type: boolean
         - type: object
           required: [type, enabled]
+          additionalProperties: false
           properties:
             type:
               type: string
@@ -738,6 +746,7 @@ paths:
             schema:
               type: object
               required: [t, d]
+              additionalProperties: false
               properties:
                 t:
                   $ref: '#/components/schemas/EventLevel'

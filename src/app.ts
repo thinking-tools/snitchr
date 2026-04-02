@@ -62,4 +62,14 @@ app.route('', auth);
 app.route('', machines);
 app.route('', settings);
 
+const STANDARD_METHODS = new Set(['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']);
+
+app.notFound(c => {
+  if (!STANDARD_METHODS.has(c.req.method)) {
+    c.header('Allow', 'GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS');
+    return c.text('Method Not Allowed', 405);
+  }
+  return c.text('404 Not Found', 404);
+});
+
 export { app };

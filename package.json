@@ -2,7 +2,7 @@
   "name": "snitchr",
   "version": "0.1.0",
   "type": "module",
-  "description": "🌐 Simple monitoring and alerting for your Linux and macOS machines. Runs on Node, Bun and Cloudflare.",
+  "description": "Self-hosted server monitoring powered by a zero-dependency bash agent. Runs on Cloudflare Workers, Node.js, and Bun.",
   "license": "MIT",
   "author": "Jølly Good (https://github.com/thinking-tools)",
   "repository": {
@@ -21,13 +21,15 @@
     "server-monitoring",
     "monitoring",
     "heartbeat",
+    "uptime",
     "security",
     "alerting",
-    "cloudflare-workers",
-    "hono",
-    "bash-agent",
     "self-hosted",
-    "linux"
+    "linux",
+    "macos",
+    "file-integrity",
+    "intrusion-detection",
+    "ssh-monitoring"
   ],
   "engines": {
     "node": ">=20.0.0"
@@ -87,7 +89,7 @@
   "dependencies": {
     "@hono/node-server": "1.19.12",
     "@noble/hashes": "2.0.1",
-    "hono": "4.12.9",
+    "hono": "4.12.10",
     "s3mini": "0.9.2"
   },
   "devDependencies": {

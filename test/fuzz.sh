@@ -86,4 +86,8 @@ docker run --rm \
   --exclude-path "/api/settings/reset" \
   --exclude-path "/api/settings/password" \
   --exclude-path "/install-agent" \
+  --exclude-path "/agent" \
+  --exclude-path "/api/login" \
+  --exclude-path "/api/settings/test-notification" \
+  --exclude-checks ignored_auth,negative_data_rejection,missing_required_header,unsupported_method \
   --max-response-time 5

@@ -42,8 +42,8 @@ machines.post(
     const config = await getConfig(c.env.SNITCHR_CONFIG);
     if (!config) return c.json({ error: 'Not configured' }, 500);
 
+    if (!Object.hasOwn(config.machineList, id)) return c.json({ error: 'Unknown machine' }, 404);
     const machine = config.machineList[id];
-    if (!machine) return c.json({ error: 'Unknown machine' }, 404);
 
     const auth = c.req.header('Authorization');
     if (!auth?.startsWith('Bearer ') || !(await timingSafeEqual(auth.slice(7), machine.secret))) {
@@ -290,8 +290,8 @@ machines.get('/api/machines/:id', async c => {
     return c.json({ error: 'Unauthorized' }, 401);
   }
   const id = c.req.param('id');
+  if (!Object.hasOwn(config.machineList, id)) return c.json({ error: 'Unknown machine' }, 404);
   const machine = config.machineList[id];
-  if (!machine) return c.json({ error: 'Unknown machine' }, 404);
 
   const store = storageFromConfig(config, c.env.SNITCHR_STORAGE);
   if (!store) return c.json({ error: 'Storage unavailable' }, 500);
@@ -334,7 +334,7 @@ machines.get('/api/machines/:id/events', async c => {
     return c.json({ error: 'Unauthorized' }, 401);
   }
   const id = c.req.param('id');
-  if (!config.machineList[id]) return c.json({ error: 'Unknown machine' }, 404);
+  if (!Object.hasOwn(config.machineList, id)) return c.json({ error: 'Unknown machine' }, 404);
 
   const store = storageFromConfig(config, c.env.SNITCHR_STORAGE);
   if (!store) return c.json({ error: 'Storage unavailable' }, 500);
@@ -374,7 +374,7 @@ machines.get('/api/machines/:id/alerts', async c => {
     return c.json({ error: 'Unauthorized' }, 401);
   }
   const id = c.req.param('id');
-  if (!config.machineList[id]) return c.json({ error: 'Unknown machine' }, 404);
+  if (!Object.hasOwn(config.machineList, id)) return c.json({ error: 'Unknown machine' }, 404);
 
   const store = storageFromConfig(config, c.env.SNITCHR_STORAGE);
   if (!store) return c.json({ error: 'Storage unavailable' }, 500);
@@ -396,10 +396,11 @@ machines.patch('/api/machines/:id', async c => {
     return c.json({ error: 'Unauthorized' }, 401);
   }
   const id = c.req.param('id');
+  if (!Object.hasOwn(config.machineList, id)) return c.json({ error: 'Unknown machine' }, 404);
   const machine = config.machineList[id];
-  if (!machine) return c.json({ error: 'Unknown machine' }, 404);
 
   const body = await c.req.json<{ label?: string }>();
+  if (!body || typeof body !== 'object') return c.json({ error: 'Invalid request body' }, 400);
   if (typeof body.label === 'string') {
     if (body.label.length > 100) return c.json({ error: 'Label too long' }, 400);
     machine.label = body.label.trim() || undefined;
@@ -414,7 +415,7 @@ machines.delete('/api/machines/:id', async c => {
     return c.json({ error: 'Unauthorized' }, 401);
   }
   const id = c.req.param('id');
-  if (!config.machineList[id]) return c.json({ error: 'Unknown machine' }, 404);
+  if (!Object.hasOwn(config.machineList, id)) return c.json({ error: 'Unknown machine' }, 404);
 
   const store = storageFromConfig(config, c.env.SNITCHR_STORAGE);
   if (!store) return c.json({ error: 'Storage unavailable' }, 500);
@@ -430,7 +431,7 @@ machines.delete('/api/machines/:id/alerts', async c => {
     return c.json({ error: 'Unauthorized' }, 401);
   }
   const id = c.req.param('id');
-  if (!config.machineList[id]) return c.json({ error: 'Unknown machine' }, 404);
+  if (!Object.hasOwn(config.machineList, id)) return c.json({ error: 'Unknown machine' }, 404);
 
   const store = storageFromConfig(config, c.env.SNITCHR_STORAGE);
   if (!store) return c.json({ error: 'Storage unavailable' }, 500);

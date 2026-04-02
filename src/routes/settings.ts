@@ -47,6 +47,9 @@ settings.patch('/api/settings', async c => {
     notifications?: Record<string, NotificationChannelConfig>;
     agentFeatures?: Partial<AgentFeatures>;
   }>();
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return c.json({ error: 'Invalid request body' }, 400);
+  }
 
   if (body.alertThreshold !== undefined) {
     const r = validateAlertThreshold(body.alertThreshold);
@@ -60,7 +63,7 @@ settings.patch('/api/settings', async c => {
     config.heartbeatTimeout = r.value;
   }
 
-  if (body.notifications !== undefined) {
+  if (body.notifications != null && typeof body.notifications === 'object') {
     const existingWebpush = config.notifications?.webpush;
     const { webpush: _, ...rest } = body.notifications;
     for (const [key, ch] of Object.entries(rest)) {
@@ -71,7 +74,7 @@ settings.patch('/api/settings', async c => {
     delete config.ntfyEndpoint;
   }
 
-  if (body.agentFeatures !== undefined) {
+  if (body.agentFeatures != null && typeof body.agentFeatures === 'object') {
     const merged = { ...AGENT_FEATURES_DEFAULT, ...config.agentFeatures };
     for (const k of FEATURE_KEYS) {
       if (typeof body.agentFeatures[k] === 'boolean') merged[k] = body.agentFeatures[k];
@@ -198,7 +201,9 @@ settings.post('/api/push/unsubscribe', async c => {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
-  const { endpoint } = await c.req.json<{ endpoint: string }>();
+  const body = await c.req.json<{ endpoint: string }>();
+  if (!body || typeof body !== 'object') return c.json({ error: 'Invalid request body' }, 400);
+  const { endpoint } = body;
   if (!endpoint) return c.json({ error: 'Endpoint required' }, 400);
 
   const raw = await c.env.SNITCHR_CONFIG.get(PUSH_SUBS_KEY);
