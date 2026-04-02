@@ -1,18 +1,113 @@
-name: API Fuzz Tests
+name: Pipeline
 
 on:
   push:
-    branches: [dev]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
 
 permissions: {}
 
 concurrency:
-  group: fuzz-${{ github.ref }}
+  group: pipeline-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # ── Gate: format, typecheck, unit tests (~30s) ───────────────────────
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests with coverage
+        run: npm run test:coverage
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            node -e "
+              const c = require('./coverage/coverage-summary.json').total;
+              const fmt = m => m.pct + '%';
+              console.log('| Metric      | Coverage |');
+              console.log('|-------------|----------|');
+              console.log('| Statements  | ' + fmt(c.statements) + ' |');
+              console.log('| Branches    | ' + fmt(c.branches) + ' |');
+              console.log('| Functions   | ' + fmt(c.functions) + ' |');
+              console.log('| Lines       | ' + fmt(c.lines) + ' |');
+            " >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # ── E2E: Bun + CF variants (~1m each, parallel) ─────────────────────
+  e2e:
+    name: E2E (${{ matrix.variant }} / ${{ matrix.storage }})
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: bun
+            storage: filesystem
+          - variant: cf
+            storage: r2
+
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+      CI: 'true'
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - if: matrix.variant == 'bun'
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+
+      - run: npm ci
+
+      - name: E2E tests
+        run: VARIANT=${{ matrix.variant }} E2E_STORAGE_MODE=${{ matrix.storage }} bash test/e2e/run.sh
+
+      - name: Gateway log (on failure)
+        if: failure()
+        run: cat /tmp/e2e_gateway.log 2>/dev/null || echo "No gateway log found"
+
+      - name: Docker logs (on failure)
+        if: failure()
+        run: docker compose -f test/e2e/docker-compose.yml logs 2>/dev/null || true
+
+  # ── Fuzz: Schemathesis API fuzzing (~1m) ─────────────────────────────
   fuzz:
+    name: Fuzz
+    needs: ci
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -27,35 +122,28 @@ jobs:
       - run: npm ci
       - run: npm run build:node
 
-      # ── Start gateway and seed test data ─────────────────────────────
       - name: Bootstrap gateway
         id: gw
         run: |
-          # Start the Node.js gateway in the background
           node dist/cli.js --port 8787 --data-dir /tmp/snitchr-fuzz &
           echo "pid=$!" >> "$GITHUB_OUTPUT"
 
-          # Wait for readiness (up to 30s)
           timeout 30 bash -c \
             'until curl -sf http://localhost:8787/api/capabilities >/dev/null 2>&1; do sleep 1; done'
 
-          # 1. Initial setup (memory storage — no R2/S3 in CI)
           curl -sf -X POST http://localhost:8787/api/setup \
             -H 'Content-Type: application/json' \
             -d '{"password":"fuzzpass123!","passwordConfirm":"fuzzpass123!","storageMode":"memory"}'
 
-          # 2. Login — capture session cookie
           SESSION=$(curl -sf -D - -X POST http://localhost:8787/api/login \
             -H 'Content-Type: application/json' \
             -d '{"password":"fuzzpass123!"}' \
             | grep -i '^set-cookie:.*session=' | sed 's/.*session=\([^;]*\).*/\1/')
           echo "session=$SESSION" >> "$GITHUB_OUTPUT"
 
-          # 3. Generate install token
           TOKEN=$(curl -sf -X POST http://localhost:8787/api/install-token \
             -H "Cookie: session=$SESSION" | jq -r '.token')
 
-          # 4. Register a machine
           REG=$(curl -sf -X POST http://localhost:8787/register \
             -H 'Content-Type: application/json' \
             -d "{\"token\":\"$TOKEN\",\"sysinfo\":{\"hostname\":\"fuzz-host\",\"os\":\"Ubuntu 22.04\"}}")
@@ -64,14 +152,12 @@ jobs:
           echo "machine_id=$MACHINE_ID" >> "$GITHUB_OUTPUT"
           echo "machine_secret=$MACHINE_SECRET" >> "$GITHUB_OUTPUT"
 
-          # 5. Seed a heartbeat so GET endpoints return real data
           NOW_MS=$(($(date +%s) * 1000))
           curl -sf -X POST "http://localhost:8787/m/$MACHINE_ID/ingest" \
             -H "Authorization: Bearer $MACHINE_SECRET" \
             -H 'Content-Type: application/json' \
             -d "{\"t\":0,\"d\":{\"ts\":$NOW_MS,\"up\":3600,\"cpu\":12.5,\"mem\":[4096,8192],\"disk\":[45],\"load\":[1.2,0.8,0.6],\"procs\":142,\"net\":[1073741824,536870912],\"ports\":\"22,80\",\"users\":\"root\"}}"
 
-          # 6. Seed an alert so alert endpoints return data
           curl -sf -X POST "http://localhost:8787/m/$MACHINE_ID/ingest" \
             -H "Authorization: Bearer $MACHINE_SECRET" \
             -H 'Content-Type: application/json' \
@@ -79,15 +165,15 @@ jobs:
 
           echo "Gateway bootstrapped (machine=$MACHINE_ID)"
 
-      # ── Schemathesis fuzz run ────────────────────────────────────────
-      - uses: schemathesis/action@v2
+      - uses: schemathesis/action@806cace2053cbbac93188e1281ff7da415643160 # v3
         with:
           schema: docs/openapi-gateway.yaml
           base-url: http://localhost:8787
           checks: all
+          authorization: Bearer ${{ steps.gw.outputs.machine_secret }}
+          coverage-pr-comment: 'false'
           args: >-
             -H "Cookie: session=${{ steps.gw.outputs.session }}"
-            -H "Authorization: Bearer ${{ steps.gw.outputs.machine_secret }}"
             --exclude-path "/api/setup"
             --exclude-path "/api/logout"
             --exclude-path "/api/settings/reset"
