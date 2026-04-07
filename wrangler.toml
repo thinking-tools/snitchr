@@ -17,8 +17,5 @@ id = "01ab40be59f6460e896be0f1c5a42d54"
 binding = "SNITCHR_STORAGE"
 bucket_name = "snitchr-storage"
 
-[vars]
-VAPID_CONTACT = ""  # Your email for Web Push VAPID identification (e.g. "you@example.com")
-
 [triggers]
 crons = ["*/5 * * * *"]
