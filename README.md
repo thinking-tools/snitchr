@@ -1,3 +1,5 @@
+<h1>⚠️ Moved to Codeberg: https://codeberg.org/thinking_tools/snitchr </h1>
+
 <p align="center">
   <img src="static/web-app-manifest-512x512.png" alt="snitchr" width="120" />
 </p>
